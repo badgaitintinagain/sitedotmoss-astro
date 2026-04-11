@@ -113,8 +113,8 @@ const sizeClassMap = {
 
 								if (tile.kind === 'quote') {
 									return (
-										<div class:list={["astro-tile", sizeClassMap[tile.size], 'astro-tile--quote']} style={`background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${randomQuote.image});`}>
-											<div class="astro-quote">
+										<div class:list={["tile", sizeClassMap[tile.size], 'home-quote']} style={`background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${randomQuote.image}); background-size: cover; background-position: center; color: white;`}>
+											<div class="home-quote__inner">
 												<p>&quot;{randomQuote.text}&quot;</p>
 												<span>- {randomQuote.author}</span>
 											</div>
@@ -125,21 +125,21 @@ const sizeClassMap = {
 								if (tile.kind === 'button') {
 									const Icon = tile.icon;
 									return (
-										<button type="button" class:list={["astro-tile astro-tile--button", sizeClassMap[tile.size]]} data-open-settings>
+										<button type="button" class:list={["tile", sizeClassMap[tile.size], 'home-tile-button']} data-open-settings>
 											{Icon && <Icon size={24} strokeWidth={1.5} />}
-											<span class="astro-tile__label">{tile.label}</span>
+											<span class="home-tile-label">{tile.label}</span>
 										</button>
 									);
 								}
 
 								const Icon = tile.icon;
 								return (
-									<div class:list={["astro-tile astro-tile--placeholder", sizeClassMap[tile.size]]}>
+									<div class:list={["tile", sizeClassMap[tile.size], 'home-tile-placeholder']}>
 										{Icon && <Icon size={24} strokeWidth={1.5} />}
-										<span class="astro-tile__label">{tile.label}</span>
+										<span class="home-tile-label">{tile.label}</span>
 										{tile.id === 'project' && (
-											<div class="astro-project">
-												<div class="astro-project__ring"><span>75%</span></div>
+											<div class="home-project">
+												<div class="home-project__ring"><span>75%</span></div>
 												<p>In Progress</p>
 											</div>
 										)}
@@ -227,59 +227,48 @@ const sizeClassMap = {
 		width: max-content;
 	}
 
-	.astro-tile {
-		position: relative;
-		overflow: hidden;
-		border: 1px solid color-mix(in srgb, var(--foreground) 20%, transparent);
-		border-radius: 0;
-		padding: 0.5rem;
-		background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
-		color: var(--tile-text);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-	}
-
-	.astro-tile--placeholder,
-	.astro-tile--button {
+	.home-tile-button,
+	.home-tile-placeholder {
 		flex-direction: column;
 		gap: 0.5rem;
 	}
 
-	.astro-tile--quote {
+	.home-quote {
+		justify-content: center;
+		align-items: center;
 		color: white;
-		background-size: cover;
-		background-position: center;
+		padding: 0.5rem 0.75rem;
 	}
 
-	.astro-tile__label {
+	.home-tile-label {
 		font-size: 0.45rem;
 		text-transform: uppercase;
 		letter-spacing: 0.18em;
 		font-weight: 700;
 	}
 
-	.astro-quote {
+	.home-quote__inner {
 		text-align: center;
 		padding: 0 0.75rem;
+		position: relative;
+		z-index: 1;
 	}
 
-	.astro-quote p {
+	.home-quote__inner p {
 		margin: 0 0 0.5rem;
 		font-size: 0.75rem;
 		font-style: italic;
 		line-height: 1.2;
 	}
 
-	.astro-quote span {
+	.home-quote__inner span {
 		font-size: 0.56rem;
 		text-transform: uppercase;
 		letter-spacing: 0.2em;
 		font-weight: 700;
 	}
 
-	.astro-project {
+	.home-project {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -287,7 +276,7 @@ const sizeClassMap = {
 		margin-top: 0.25rem;
 	}
 
-	.astro-project__ring {
+	.home-project__ring {
 		width: 2.5rem;
 		height: 2.5rem;
 		border-radius: 999px;
@@ -296,7 +285,7 @@ const sizeClassMap = {
 		place-items: center;
 	}
 
-	.astro-project__ring span {
+	.home-project__ring span {
 		font-size: 0.65rem;
 		font-weight: 700;
 	}
