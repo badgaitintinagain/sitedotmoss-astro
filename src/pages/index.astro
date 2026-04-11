@@ -1,8 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import HomePage from '../components/HomePage.astro';
+import HomePage from '../components/HomePage';
 ---
 
 <Layout>
-	<HomePage />
+	<HomePage client:only="react" />
 </Layout>

@@ -14,7 +14,6 @@ import BlogTile from "@/components/BlogTile";
 import ResourceTile from "@/components/ResourceTile";
 import SettingsModal from "@/components/SettingsModal";
 import ProfileButton from "@/components/ProfileButton";
-import gsap from "gsap";
 import { Settings, Users, PenTool, StickyNote } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -105,13 +104,25 @@ const HomePage = () => {
   useEffect(() => {
     if (!mounted || !containerRef.current) return;
 
-    gsap.from(".dashboard-header", {
-      y: -20,
-      opacity: 0,
-      duration: 1,
-      ease: "power3.out",
-      force3D: true,
-    });
+    let active = true;
+    const run = async () => {
+      const gsap = (await import('gsap')).default;
+      if (!active) return;
+
+      gsap.from(".dashboard-header", {
+        y: -20,
+        opacity: 0,
+        duration: 1,
+        ease: "power3.out",
+        force3D: true,
+      });
+    };
+
+    void run();
+
+    return () => {
+      active = false;
+    };
   }, [mounted]);
 
   if (!mounted) return (
