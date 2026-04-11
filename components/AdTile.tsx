@@ -15,7 +15,7 @@ interface AdTileProps {
 const AdTile: React.FC<AdTileProps> = ({ 
   title = "Premium Experience", 
   description = "Upgrade your lifestyle with our latest collection.",
-  image = "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=600&q=80",
+  image = "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=420&q=60",
   size = "3x2",
   accent = "secondary",
   opacity = 35

@@ -34,9 +34,9 @@ interface DashboardGroup {
 }
 
 const QUOTES = [
-  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs", image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=400&q=60" },
-  { text: "Stay hungry, stay foolish.", author: "Steve Jobs", image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=400&q=60" },
-  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt", image: "https://images.unsplash.com/photo-1485872232694-217b2ad2303e?auto=format&fit=crop&w=400&q=60" }
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs", image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=320&q=55" },
+  { text: "Stay hungry, stay foolish.", author: "Steve Jobs", image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=320&q=55" },
+  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt", image: "https://images.unsplash.com/photo-1485872232694-217b2ad2303e?auto=format&fit=crop&w=320&q=55" }
 ];
 
 const HomePage = () => {
