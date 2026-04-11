@@ -1,0 +1,138 @@
+---
+---
+
+<div class="settings-shell" hidden data-settings-modal>
+	<div class="settings-shell__backdrop" data-settings-close></div>
+	<div class="settings-shell__panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+		<div class="settings-shell__header">
+			<h2 id="settings-title">Settings</h2>
+			<button type="button" data-settings-close aria-label="Close settings">×</button>
+		</div>
+
+		<div class="settings-shell__row">
+			<button type="button" data-theme-mode="light">Day</button>
+			<button type="button" data-theme-mode="dark">Night</button>
+		</div>
+
+		<div class="settings-shell__group">
+			<p class="settings-shell__label">Glass blur</p>
+			<input type="range" min="0" max="40" value="0" data-glass-range />
+		</div>
+
+		<div class="settings-shell__group">
+			<p class="settings-shell__label">Accessibility</p>
+			<button type="button" data-toggle-grayscale>Toggle grayscale</button>
+		</div>
+	</div>
+</div>
+
+<script>
+	const root = document.documentElement;
+	const modal = document.querySelector('[data-settings-modal]');
+	if (modal) {
+		const openButtons = document.querySelectorAll('[data-open-settings]');
+		const closeButtons = modal.querySelectorAll('[data-settings-close]');
+		const themeButtons = modal.querySelectorAll('[data-theme-mode]');
+		const glassRange = modal.querySelector('[data-glass-range]');
+		const grayscaleButton = modal.querySelector('[data-toggle-grayscale]');
+
+		const open = () => {
+			modal.hidden = false;
+		};
+		const close = () => {
+			modal.hidden = true;
+		};
+
+		openButtons.forEach((button) => button.addEventListener('click', open));
+		closeButtons.forEach((button) => button.addEventListener('click', close));
+		themeButtons.forEach((button) => {
+			button.addEventListener('click', () => {
+				const next = button.getAttribute('data-theme-mode') || 'light';
+				root.classList.toggle('dark', next === 'dark');
+				localStorage.setItem('theme', next);
+			});
+		});
+		glassRange?.addEventListener('input', (event) => {
+			const value = String(event.currentTarget.value);
+			root.style.setProperty('--glass-blur', `${value}px`);
+			localStorage.setItem('glassBlur', value);
+		});
+		grayscaleButton?.addEventListener('click', () => {
+			root.classList.toggle('force-grayscale');
+			localStorage.setItem('grayscale', String(root.classList.contains('force-grayscale')));
+		});
+		document.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape') close();
+		});
+	}
+</script>
+
+<style>
+	.settings-shell {
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		display: grid;
+		place-items: center;
+		padding: 1rem;
+	}
+
+	.settings-shell__backdrop {
+		position: absolute;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.48);
+		backdrop-filter: blur(12px);
+	}
+
+	.settings-shell__panel {
+		position: relative;
+		z-index: 1;
+		width: min(100%, 42rem);
+		padding: 1.25rem;
+		border-radius: 0.6rem;
+		border: 1px solid color-mix(in srgb, var(--foreground) 15%, transparent);
+		background: color-mix(in srgb, var(--background) 84%, transparent);
+		backdrop-filter: blur(22px);
+	}
+
+	.settings-shell__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 1rem;
+	}
+
+	.settings-shell__header button,
+	.settings-shell__row button,
+	.settings-shell__group button {
+		border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+		background: color-mix(in srgb, var(--foreground) 5%, transparent);
+		color: var(--foreground);
+		padding: 0.65rem 0.85rem;
+		border-radius: 0.5rem;
+	}
+
+	.settings-shell__row {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.65rem;
+		margin-bottom: 1rem;
+	}
+
+	.settings-shell__group {
+		display: grid;
+		gap: 0.5rem;
+		margin-top: 1rem;
+	}
+
+	.settings-shell__label {
+		font-size: 0.78rem;
+		text-transform: uppercase;
+		letter-spacing: 0.18em;
+		opacity: 0.65;
+	}
+
+	input[type='range'] {
+		width: 100%;
+	}
+</style>

@@ -7,6 +7,23 @@ import '../styles/globals.css';
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script is:inline>
+			const root = document.documentElement;
+			try {
+				const theme = localStorage.getItem('theme');
+				if (theme === 'dark') root.classList.add('dark');
+				const glassBlur = localStorage.getItem('glassBlur');
+				if (glassBlur) root.style.setProperty('--glass-blur', `${glassBlur}px`);
+				const bgType = localStorage.getItem('bgType');
+				const bgValue = localStorage.getItem('bgValue');
+				if (bgType && bgValue) root.style.setProperty('--bg-image', bgType === 'image' ? `url(${bgValue})` : 'none');
+				const customPrimary = localStorage.getItem('customPrimary');
+				const customSecondary = localStorage.getItem('customSecondary');
+				if (customPrimary) root.style.setProperty('--accent-primary', customPrimary);
+				if (customSecondary) root.style.setProperty('--accent-secondary', customSecondary);
+				if (localStorage.getItem('grayscale') === 'true') root.classList.add('force-grayscale');
+			} catch {}
+		</script>
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
 		<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet" />

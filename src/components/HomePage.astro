@@ -1,0 +1,295 @@
+---
+import Background from './Background.astro';
+import ProfileButton from './ProfileButton.astro';
+import SettingsModal from './SettingsModal.astro';
+
+import WeatherTile from '@/components/WeatherTile';
+import AdTile from './AdTile.astro';
+import CalendarTile from '@/components/CalendarTile';
+import ClockTile from '@/components/ClockTile';
+import ShoeDemoTile from '@/components/ShoeDemoTile';
+import NextWbcTile from '@/components/NextWbcTile';
+import SpotifyAnalysisTile from '@/components/SpotifyAnalysisTile';
+import BlogTile from './BlogTile.astro';
+import ResourceTile from '@/components/ResourceTile';
+import { Settings, Users, PenTool, StickyNote } from 'lucide-react';
+
+const QUOTES = [
+	{ text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs', image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=400&q=60' },
+	{ text: 'Stay hungry, stay foolish.', author: 'Steve Jobs', image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=400&q=60' },
+	{ text: 'The future belongs to those who believe in the beauty of their dreams.', author: 'Eleanor Roosevelt', image: 'https://images.unsplash.com/photo-1485872232694-217b2ad2303e?auto=format&fit=crop&w=400&q=60' },
+] as const;
+
+const randomQuote = QUOTES[Math.floor(Math.random() * QUOTES.length)];
+
+const dashboardGroups = [
+	{
+		title: 'Life at a glance',
+		tiles: [
+			{ kind: 'react', component: ClockTile, props: { size: '2x2', label: 'Clock', accent: 'primary', opacity: 55 } },
+			{ kind: 'react', component: CalendarTile, props: { size: '2x3', label: 'Calendar', accent: 'secondary', opacity: 65 } },
+			{ kind: 'button', id: 'settings', size: '1x1', label: 'Settings', icon: Settings, accent: 'secondary', opacity: 60 },
+			{ kind: 'quote', size: '3x2' },
+			{ kind: 'astro', component: AdTile, props: { size: '3x2', title: 'New Collection 2025', description: 'Discover the future of design.' } },
+			{ kind: 'react', component: WeatherTile, props: { size: '2x1', label: 'Weather', accent: 'primary', opacity: 45 } },
+		]
+	},
+	{
+		title: 'AI Lab',
+		tiles: [
+			{ kind: 'react', component: SpotifyAnalysisTile, props: { size: '2x1', accent: 'primary', opacity: 50 } },
+			{ kind: 'react', component: ShoeDemoTile, props: { size: '2x2', accent: 'secondary', opacity: 40 } },
+			{ kind: 'react', component: NextWbcTile, props: { size: '2x1', accent: 'primary', opacity: 40 } },
+		]
+	},
+	{
+		title: 'Work & Focus',
+		tiles: [
+			{ kind: 'astro', component: BlogTile, props: { size: '2x2', accent: 'primary', opacity: 40 } },
+			{ kind: 'placeholder', id: 'tasks', size: '2x2', label: 'Tasks', icon: PenTool, accent: 'secondary', opacity: 40 },
+			{ kind: 'react', component: ResourceTile, props: { size: '1x1', accent: 'primary', opacity: 25 } },
+			{ kind: 'placeholder', id: 'notes', size: '1x1', label: 'Notes', icon: StickyNote, accent: 'secondary', opacity: 35 },
+			{ kind: 'placeholder', id: 'project', size: '2x3', label: 'Project Alpha', accent: 'secondary', opacity: 50 },
+			{ kind: 'placeholder', id: 'team', size: '2x2', label: 'Team', icon: Users, accent: 'primary', opacity: 35 },
+		]
+	}
+] as const;
+
+const sizeClassMap = {
+	'1x1': 'tile-1x1 row-span-1 col-span-1',
+	'2x1': 'tile-2x1 row-span-1 col-span-2',
+	'2x2': 'tile-2x2 row-span-2 col-span-2',
+	'2x3': 'tile-2x3 row-span-3 col-span-2',
+	'3x2': 'tile-3x2 row-span-2 col-span-3',
+} as const;
+---
+
+<Background />
+
+<div class="home-shell">
+	<ProfileButton />
+	<div class="home-shell__veil"></div>
+
+	<div class="home-shell__content">
+		<div class="home-shell__inner">
+			<header class="dashboard-header">
+				<h1>site(.)moss</h1>
+			</header>
+
+			<main class="dashboard-main w-fit max-w-full gap-x-8 gap-y-10 no-scrollbar pb-8">
+				{dashboardGroups.map((group) => (
+					<section class="dashboard-group">
+						<h2>{group.title}</h2>
+						<div class="dashboard-grid">
+							{group.tiles.map((tile) => {
+												if (tile.kind === 'react') {
+									const Component = tile.component;
+									return <Component client:only="react" {...tile.props} />;
+								}
+
+												if (tile.kind === 'astro') {
+													const Component = tile.component;
+													return <Component {...tile.props} />;
+												}
+
+								if (tile.kind === 'quote') {
+									return (
+										<div class:list={["astro-tile", sizeClassMap[tile.size], 'astro-tile--quote']}>
+											<div class="astro-quote">
+												<p>&quot;{randomQuote.text}&quot;</p>
+												<span>- {randomQuote.author}</span>
+											</div>
+										</div>
+									);
+								}
+
+								if (tile.kind === 'button') {
+									const Icon = tile.icon;
+									return (
+										<button type="button" class:list={["astro-tile astro-tile--button", sizeClassMap[tile.size]]} data-open-settings>
+											{Icon && <Icon size={24} strokeWidth={1.5} />}
+											<span class="astro-tile__label">{tile.label}</span>
+										</button>
+									);
+								}
+
+								const Icon = tile.icon;
+								return (
+									<div class:list={["astro-tile astro-tile--placeholder", sizeClassMap[tile.size]]}>
+										{Icon && <Icon size={24} strokeWidth={1.5} />}
+										<span class="astro-tile__label">{tile.label}</span>
+										{tile.id === 'project' && (
+											<div class="astro-project">
+												<div class="astro-project__ring"><span>75%</span></div>
+												<p>In Progress</p>
+											</div>
+										)}
+									</div>
+								);
+							})}
+						</div>
+					</section>
+				))}
+			</main>
+		</div>
+	</div>
+</div>
+
+<SettingsModal />
+
+<style>
+	.home-shell {
+		position: relative;
+		min-height: 100vh;
+		width: 100%;
+		overflow-x: hidden;
+		font-family: var(--font-sans);
+	}
+
+	.home-shell__veil {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		pointer-events: none;
+		background: color-mix(in srgb, var(--background) 5%, transparent);
+		backdrop-filter: blur(1px);
+	}
+
+	.home-shell__content {
+		position: relative;
+		z-index: 2;
+		min-height: 100vh;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 3rem 0;
+	}
+
+	.home-shell__inner {
+		width: fit-content;
+		max-width: 100%;
+		padding: 0 1.5rem;
+	}
+
+	.dashboard-header {
+		margin-bottom: 2rem;
+	}
+
+	.dashboard-header h1 {
+		margin: 0;
+		font-size: clamp(3rem, 6vw, 4rem);
+		font-weight: 300;
+		letter-spacing: -0.04em;
+	}
+
+	.dashboard-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		align-items: flex-start;
+		margin-bottom: 1rem;
+	}
+
+	.dashboard-group h2 {
+		margin: 0 0 0 0.25rem;
+		font-size: 0.625rem;
+		font-weight: 700;
+		letter-spacing: 0.2em;
+		text-transform: uppercase;
+		opacity: 0.6;
+	}
+
+	.dashboard-grid {
+		display: grid;
+		grid-template-rows: repeat(5, minmax(0, 1fr));
+		grid-auto-flow: column;
+		gap: 0.375rem;
+		height: 21.5rem;
+		width: max-content;
+	}
+
+	.astro-tile {
+		position: relative;
+		overflow: hidden;
+		border: 1px solid color-mix(in srgb, var(--foreground) 20%, transparent);
+		border-radius: 0;
+		padding: 0.5rem;
+		background: color-mix(in srgb, var(--accent-primary) 18%, transparent);
+		color: var(--tile-text);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+	}
+
+	.astro-tile--placeholder,
+	.astro-tile--button {
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.astro-tile--quote {
+		color: white;
+		background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url({randomQuote.image});
+		background-size: cover;
+		background-position: center;
+	}
+
+	.astro-tile__label {
+		font-size: 0.45rem;
+		text-transform: uppercase;
+		letter-spacing: 0.18em;
+		font-weight: 700;
+	}
+
+	.astro-quote {
+		text-align: center;
+		padding: 0 0.75rem;
+	}
+
+	.astro-quote p {
+		margin: 0 0 0.5rem;
+		font-size: 0.75rem;
+		font-style: italic;
+		line-height: 1.2;
+	}
+
+	.astro-quote span {
+		font-size: 0.56rem;
+		text-transform: uppercase;
+		letter-spacing: 0.2em;
+		font-weight: 700;
+	}
+
+	.astro-project {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.25rem;
+		margin-top: 0.25rem;
+	}
+
+	.astro-project__ring {
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 999px;
+		border: 2px solid color-mix(in srgb, var(--tile-text) 30%, transparent);
+		display: grid;
+		place-items: center;
+	}
+
+	.astro-project__ring span {
+		font-size: 0.65rem;
+		font-weight: 700;
+	}
+
+	@media (max-width: 768px) {
+		.home-shell__content {
+			padding: 2rem 0 4rem;
+		}
+
+		.home-shell__inner {
+			padding: 0 1rem;
+		}
+	}
+</style>

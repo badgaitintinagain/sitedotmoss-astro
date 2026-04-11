@@ -1,0 +1,341 @@
+---
+---
+
+<div class="profile-shell" data-profile-shell>
+	<button class="profile-button" type="button" aria-label="Open profile menu" data-profile-trigger>
+		<span class="profile-avatar" data-profile-avatar>
+			<span class="profile-avatar__icon">◌</span>
+		</span>
+	</button>
+
+	<div class="profile-menu" hidden data-profile-menu>
+		<div class="profile-menu__section profile-menu__section--user" data-profile-user></div>
+		<div class="profile-menu__section">
+			<button class="profile-menu__item" type="button" data-theme-toggle>
+				<span data-theme-icon>◐</span>
+				<span data-theme-label>Theme</span>
+			</button>
+			<button class="profile-menu__item" type="button" data-admin-link hidden>
+				<span>Admin Panel</span>
+		</button>
+			<button class="profile-menu__item profile-menu__item--danger" type="button" data-logout>
+				<span>Logout</span>
+			</button>
+		</div>
+		<div class="profile-menu__section" data-profile-guest>
+			<button class="profile-menu__item" type="button" data-theme-toggle>
+				<span data-theme-icon>◐</span>
+				<span data-theme-label>Theme</span>
+			</button>
+			<button class="profile-menu__item" type="button" data-login-open>
+				<span>Admin Login</span>
+			</button>
+		</div>
+	</div>
+
+	<div class="profile-modal" hidden data-login-modal>
+		<div class="profile-modal__backdrop" data-login-close></div>
+		<div class="profile-modal__panel" role="dialog" aria-modal="true" aria-labelledby="login-title">
+			<div class="profile-modal__header">
+				<h2 id="login-title">Admin Login</h2>
+				<button type="button" class="profile-modal__close" data-login-close aria-label="Close login">×</button>
+			</div>
+			<form class="profile-form" data-login-form>
+				<label>
+					<span>Email</span>
+					<input type="email" name="email" placeholder="admin@sitedotmoss.com" required />
+				</label>
+				<label>
+					<span>Password</span>
+					<input type="password" name="password" placeholder="••••••••" required />
+				</label>
+				<button type="submit" class="profile-form__submit">Login</button>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+	const root = document.documentElement;
+	const shell = document.querySelector('[data-profile-shell]');
+	if (!shell) {
+		// no-op
+	} else {
+		const menu = shell.querySelector('[data-profile-menu]');
+		const trigger = shell.querySelector('[data-profile-trigger]');
+		const loginModal = shell.querySelector('[data-login-modal]');
+		const loginOpen = shell.querySelector('[data-login-open]');
+		const loginCloseButtons = shell.querySelectorAll('[data-login-close]');
+		const loginForm = shell.querySelector('[data-login-form]');
+		const logoutButton = shell.querySelector('[data-logout]');
+		const adminLink = shell.querySelector('[data-admin-link]');
+		const profileUser = shell.querySelector('[data-profile-user]');
+		const profileGuest = shell.querySelector('[data-profile-guest]');
+		const avatar = shell.querySelector('[data-profile-avatar]');
+		const themeButtons = shell.querySelectorAll('[data-theme-toggle]');
+
+		const getTheme = () => (root.classList.contains('dark') ? 'dark' : 'light');
+		const setTheme = (theme) => {
+			root.classList.toggle('dark', theme === 'dark');
+			localStorage.setItem('theme', theme);
+		};
+
+		const updateThemeLabels = () => {
+			const theme = getTheme();
+			shell.querySelectorAll('[data-theme-label]').forEach((node) => {
+				node.textContent = theme === 'light' ? 'Dark Mode' : 'Light Mode';
+			});
+			shell.querySelectorAll('[data-theme-icon]').forEach((node) => {
+				node.textContent = theme === 'light' ? '◐' : '◑';
+			});
+		};
+
+		const applyUser = async () => {
+			try {
+				const response = await fetch('/api/auth/me');
+				const data = await response.json();
+				const user = data.user;
+				if (user) {
+					profileUser.hidden = false;
+					profileGuest.hidden = true;
+					logoutButton.hidden = false;
+					adminLink.hidden = user.role !== 'admin';
+					profileUser.innerHTML = `
+						<div class="profile-user__name">${user.name}</div>
+						<div class="profile-user__email">${user.email}</div>
+						${user.role === 'admin' ? '<div class="profile-user__badge">Admin</div>' : ''}
+					`;
+					if (user.avatar) {
+						avatar.innerHTML = `<img src="${user.avatar}" alt="${user.name}" />`;
+					} else {
+						avatar.innerHTML = '<span class="profile-avatar__icon">◌</span>';
+					}
+				} else {
+					profileUser.hidden = true;
+					profileGuest.hidden = false;
+					logoutButton.hidden = true;
+					adminLink.hidden = true;
+				}
+			} catch {
+				profileUser.hidden = true;
+				profileGuest.hidden = false;
+			}
+		};
+
+		const openMenu = () => menu && (menu.hidden = false);
+		const closeMenu = () => menu && (menu.hidden = true);
+		const openLogin = () => loginModal && (loginModal.hidden = false);
+		const closeLogin = () => loginModal && (loginModal.hidden = true);
+
+		trigger?.addEventListener('click', () => {
+			if (!menu) return;
+			menu.hidden = !menu.hidden;
+		});
+
+		loginOpen?.addEventListener('click', openLogin);
+		loginCloseButtons.forEach((button) => button.addEventListener('click', closeLogin));
+		document.addEventListener('mousedown', (event) => {
+			if (shell.contains(event.target)) return;
+			closeMenu();
+		});
+
+		if (adminLink) {
+			adminLink.addEventListener('click', () => {
+				window.location.href = '/admin';
+			});
+		}
+
+		logoutButton?.addEventListener('click', async () => {
+			await fetch('/api/auth/logout', { method: 'POST' });
+			window.location.reload();
+		});
+
+		themeButtons.forEach((button) => {
+			button.addEventListener('click', () => {
+				setTheme(getTheme() === 'light' ? 'dark' : 'light');
+				updateThemeLabels();
+			});
+		});
+
+		loginForm?.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			const form = event.currentTarget;
+			const formData = new FormData(form);
+			const response = await fetch('/api/auth/login', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					email: String(formData.get('email') || ''),
+					password: String(formData.get('password') || ''),
+				}),
+			});
+			if (response.ok) {
+				closeLogin();
+				await applyUser();
+				closeMenu();
+			} else {
+				alert('Invalid credentials');
+			}
+		});
+
+		if (localStorage.getItem('theme') === 'dark') {
+			root.classList.add('dark');
+		}
+		updateThemeLabels();
+		applyUser();
+	}
+</script>
+
+<style>
+	.profile-shell {
+		position: fixed;
+		top: 1.5rem;
+		right: 1.5rem;
+		z-index: 50;
+	}
+
+	.profile-button {
+		appearance: none;
+		border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+		background: color-mix(in srgb, var(--foreground) 5%, transparent);
+		backdrop-filter: blur(16px);
+		border-radius: 999px;
+		padding: 0.35rem;
+		color: var(--foreground);
+	}
+
+	.profile-avatar {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 0.5rem;
+		background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+		border: 1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent);
+		overflow: hidden;
+	}
+
+	.profile-avatar img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.profile-menu,
+	.profile-modal__panel {
+		background: color-mix(in srgb, var(--background) 90%, transparent);
+		backdrop-filter: blur(18px);
+		border: 1px solid color-mix(in srgb, var(--foreground) 12%, transparent);
+		border-radius: 0.5rem;
+		box-shadow: 0 24px 60px rgba(0, 0, 0, 0.24);
+	}
+
+	.profile-menu {
+		margin-top: 0.5rem;
+		width: 15rem;
+		overflow: hidden;
+		position: absolute;
+		right: 0;
+	}
+
+	.profile-menu__section {
+		padding: 0.35rem 0;
+	}
+
+	.profile-menu__section--user {
+		padding: 1rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--foreground) 6%, transparent);
+	}
+
+	.profile-menu__item {
+		width: 100%;
+		padding: 0.7rem 1rem;
+		background: transparent;
+		border: 0;
+		color: var(--foreground);
+		text-align: left;
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+	}
+
+	.profile-menu__item--danger {
+		color: #dc2626;
+	}
+
+	.profile-modal {
+		position: fixed;
+		inset: 0;
+		z-index: 200;
+		display: grid;
+		place-items: center;
+		padding: 1rem;
+	}
+
+	.profile-modal__backdrop {
+		position: absolute;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.55);
+		backdrop-filter: blur(10px);
+	}
+
+	.profile-modal__panel {
+		position: relative;
+		z-index: 1;
+		width: min(100%, 28rem);
+		padding: 1.25rem;
+	}
+
+	.profile-modal__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 1rem;
+	}
+
+	.profile-modal__close {
+		border: 0;
+		background: transparent;
+		font-size: 1.5rem;
+		color: var(--foreground);
+	}
+
+	.profile-form {
+		display: grid;
+		gap: 0.85rem;
+	}
+
+	.profile-form label {
+		display: grid;
+		gap: 0.35rem;
+		font-size: 0.85rem;
+	}
+
+	.profile-form input {
+		padding: 0.8rem 0.95rem;
+		border-radius: 0.55rem;
+		border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+		background: color-mix(in srgb, var(--foreground) 5%, transparent);
+		color: var(--foreground);
+	}
+
+	.profile-form__submit {
+		padding: 0.85rem 1rem;
+		border-radius: 0.55rem;
+		border: 0;
+		background: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+		color: var(--foreground);
+		font-weight: 700;
+	}
+
+	.profile-user__name {
+		font-weight: 700;
+	}
+
+	.profile-user__email,
+	.profile-user__badge {
+		font-size: 0.78rem;
+		opacity: 0.75;
+	}
+</style>

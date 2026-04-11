@@ -1,0 +1,87 @@
+---
+interface Props {
+	title?: string;
+	description?: string;
+	image?: string;
+	size?: '1x1' | '2x1' | '2x2' | '2x3' | '3x2';
+	accent?: 'primary' | 'secondary';
+	opacity?: number;
+}
+
+const {
+	title = 'Premium Experience',
+	description = 'Upgrade your lifestyle with our latest collection.',
+	image = 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=600&q=80',
+	size = '3x2',
+	accent = 'secondary',
+	opacity = 35,
+} = Astro.props as Props;
+---
+
+<div class={`tile tile-${size} astro-ad`} style={`--tile-opacity:${opacity / 100}; --tile-accent:var(--accent-${accent}); --tile-image:url(${image});`}>
+	<div class="astro-ad__content">
+		<h3>{title}</h3>
+		<p>{description}</p>
+		<div class="astro-ad__cta">
+			<span>Learn More</span>
+			<span aria-hidden="true">↗</span>
+		</div>
+	</div>
+</div>
+
+<style>
+	.astro-ad {
+		background-image: var(--tile-image);
+		background-size: cover;
+		background-position: center;
+		color: white;
+	}
+
+	.astro-ad::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: color-mix(in srgb, black 42%, transparent);
+	}
+
+	.astro-ad__content {
+		position: relative;
+		z-index: 1;
+		margin: auto 0.25rem 0.125rem;
+		padding: 0.6rem 0.75rem;
+		text-align: center;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: rgba(0, 0, 0, 0.5);
+		backdrop-filter: blur(12px);
+		transition: transform 0.4s ease;
+	}
+
+	.astro-ad:hover .astro-ad__content {
+		transform: scale(1.04);
+	}
+
+	.astro-ad__content h3 {
+		margin: 0 0 0.25rem;
+		font-size: 0.625rem;
+		line-height: 1.2;
+	}
+
+	.astro-ad__content p {
+		margin: 0;
+		font-size: 0.45rem;
+		line-height: 1.2;
+		opacity: 0.95;
+	}
+
+	.astro-ad__cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		margin-top: 0.35rem;
+		font-size: 0.375rem;
+		text-transform: uppercase;
+		letter-spacing: 0.18em;
+		font-weight: 700;
+		opacity: 0.9;
+	}
+</style>
