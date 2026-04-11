@@ -12,6 +12,27 @@
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^6.1.5"
+    "@astrojs/node": "^10.0.0",
+    "@astrojs/react": "^4.4.0",
+    "@gradio/client": "^2.2.0",
+    "@libsql/client": "^0.15.15",
+    "@tailwindcss/vite": "^4.1.4",
+    "astro": "^6.1.5",
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.7.0",
+    "dotenv": "^16.6.1",
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.6",
+    "gsap": "^3.13.0",
+    "lucide-react": "^0.510.0",
+    "react": "^19.1.0",
+    "react-calendar": "^5.1.0",
+    "react-dom": "^19.1.0",
+    "react-markdown": "^10.1.0",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1"
+  },
+  "optionalDependencies": {
+    "@libsql/win32-arm64-msvc": "0.5.29"
   }
 }

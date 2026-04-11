@@ -1,0 +1,321 @@
+"use client";
+import React, { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
+import { User, LogIn, LogOut, Settings, Shield, Sun, Moon } from 'lucide-react';
+import gsap from 'gsap';
+import { useTheme } from './ThemeProvider';
+
+interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  avatar?: string;
+}
+
+const ProfileButton: React.FC = () => {
+  const { theme, toggleTheme } = useTheme();
+  const [isOpen, setIsOpen] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [showLogin, setShowLogin] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.user) {
+            setUser(data.user);
+          }
+        }
+      } catch (error) {
+        console.error('Session check failed:', error);
+      }
+    };
+    checkSession();
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  // Animation for dropdown
+  useEffect(() => {
+    if (isOpen && menuRef.current) {
+      gsap.fromTo(
+        menuRef.current,
+        {
+          opacity: 0,
+          y: -10,
+          scaleX: 0.92,
+          scaleY: 0.75,
+          borderRadius: '10px',
+          filter: 'blur(4px)',
+          transformOrigin: 'top right'
+        },
+        {
+          opacity: 1,
+          y: 0,
+          scaleX: 1,
+          scaleY: 1,
+          borderRadius: '6px',
+          filter: 'blur(0px)',
+          duration: 0.32,
+          ease: 'power3.out'
+        }
+      );
+    }
+  }, [isOpen]);
+
+  // Animation for modal
+  useEffect(() => {
+    if (showLogin && modalRef.current) {
+      gsap.fromTo(
+        modalRef.current,
+        { opacity: 0, scale: 0.9, y: 20 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: 'power2.out' }
+      );
+    }
+  }, [showLogin]);
+
+  const handleLogin = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+        setShowLogin(false);
+        setIsOpen(false);
+      } else {
+        alert('Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      setUser(null);
+      setIsOpen(false);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  return (
+    <>
+      <div className="fixed top-6 md:top-8 right-6 z-50" ref={dropdownRef}>
+        {/* Profile Button */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="flex items-center gap-1.5 p-1.5 rounded-[4px] bg-foreground/5 hover:bg-foreground/10 border border-foreground/15 transition-all duration-200 group backdrop-blur-xl shadow-lg hover:shadow-xl"
+          aria-label="Open profile menu"
+        >
+          <div className="w-7 h-7 rounded-[3px] bg-accent-primary/20 border border-accent-primary/35 flex items-center justify-center overflow-hidden group-hover:border-accent-primary/50 transition-all">
+            {user?.avatar ? (
+              <Image src={user.avatar} alt={user.name} width={28} height={28} className="w-full h-full object-cover" />
+            ) : (
+              <User size={14} className="text-accent-primary" />
+            )}
+          </div>
+        </button>
+
+        {/* Dropdown Menu */}
+        {isOpen && (
+          <div
+            ref={menuRef}
+            className="absolute right-0 mt-2 w-56 bg-background/85 border border-foreground/15 rounded-[6px] shadow-2xl overflow-hidden backdrop-blur-xl z-[60]"
+          >
+            {user ? (
+              <>
+                <div className="p-4 border-b border-foreground/5 bg-foreground/5">
+                  <p className="text-sm font-medium text-foreground">{user.name}</p>
+                  <p className="text-xs text-foreground/60 mt-1">{user.email}</p>
+                  {user.role === 'admin' && (
+                    <div className="flex items-center gap-1 mt-2">
+                      <Shield size={12} className="text-accent-primary" />
+                      <span className="text-[10px] uppercase tracking-widest text-accent-primary font-bold">
+                        Admin
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="py-1">
+                  <button
+                    onClick={() => {
+                      toggleTheme();
+                      setIsOpen(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-foreground/5 flex items-center gap-2 transition-colors"
+                  >
+                    {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                    <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+                  </button>
+                  {user.role === 'admin' && (
+                    <button
+                      onClick={() => {
+                        window.location.href = '/admin';
+                        setIsOpen(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-foreground/5 flex items-center gap-2 transition-colors"
+                    >
+                      <Settings size={16} />
+                      <span>Admin Panel</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-foreground/5 flex items-center gap-2 transition-colors"
+                  >
+                    <LogOut size={16} />
+                    <span>Logout</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    toggleTheme();
+                    setIsOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-foreground/5 flex items-center gap-2 transition-colors"
+                >
+                  {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                  <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLogin(true);
+                    setIsOpen(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-foreground hover:bg-foreground/5 flex items-center gap-2 transition-colors"
+                >
+                  <LogIn size={16} />
+                  <span>Admin Login</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Login Modal */}
+      {showLogin && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            onClick={() => setShowLogin(false)}
+          />
+          
+          <div
+            ref={modalRef}
+            className="relative w-full max-w-md bg-background border border-foreground/10 rounded-2xl shadow-2xl overflow-hidden"
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-light tracking-tight text-foreground">Admin Login</h2>
+                <button
+                  onClick={() => setShowLogin(false)}
+                  className="p-2 hover:bg-foreground/10 rounded-full transition-colors"
+                >
+                  <User size={20} className="text-foreground" />
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  handleLogin(
+                    formData.get('email') as string,
+                    formData.get('password') as string
+                  );
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    className="w-full bg-foreground/5 border border-foreground/10 rounded-lg py-3 px-4 text-sm text-foreground focus:outline-none focus:border-accent-primary/50 transition-all"
+                    placeholder="admin@sitedotmoss.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    required
+                    className="w-full bg-foreground/5 border border-foreground/10 rounded-lg py-3 px-4 text-sm text-foreground focus:outline-none focus:border-accent-primary/50 transition-all"
+                    placeholder="••••••••"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-accent-primary/20 hover:bg-accent-primary/30 disabled:opacity-50 text-accent-primary font-medium py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-accent-primary/30 border-t-accent-primary rounded-full animate-spin" />
+                      <span>Logging in...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogIn size={18} />
+                      <span>Login</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <p className="text-xs text-foreground/40 text-center mt-4">
+                Only admins can login
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default ProfileButton;
