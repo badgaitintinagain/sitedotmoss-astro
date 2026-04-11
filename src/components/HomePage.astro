@@ -83,8 +83,27 @@ const sizeClassMap = {
 						<div class="dashboard-grid">
 							{group.tiles.map((tile) => {
 												if (tile.kind === 'react') {
-									const Component = tile.component;
-									return <Component client:only="react" {...tile.props} />;
+									if (tile.component === ClockTile) {
+										return <ClockTile client:only="react" {...tile.props} />;
+									}
+									if (tile.component === CalendarTile) {
+										return <CalendarTile client:only="react" {...tile.props} />;
+									}
+									if (tile.component === WeatherTile) {
+										return <WeatherTile client:only="react" {...tile.props} />;
+									}
+									if (tile.component === SpotifyAnalysisTile) {
+										return <SpotifyAnalysisTile client:only="react" {...tile.props} />;
+									}
+									if (tile.component === ShoeDemoTile) {
+										return <ShoeDemoTile client:only="react" {...tile.props} />;
+									}
+									if (tile.component === NextWbcTile) {
+										return <NextWbcTile client:only="react" {...tile.props} />;
+									}
+									if (tile.component === ResourceTile) {
+										return <ResourceTile client:only="react" {...tile.props} />;
+									}
 								}
 
 												if (tile.kind === 'astro') {
@@ -94,7 +113,7 @@ const sizeClassMap = {
 
 								if (tile.kind === 'quote') {
 									return (
-										<div class:list={["astro-tile", sizeClassMap[tile.size], 'astro-tile--quote']}>
+										<div class:list={["astro-tile", sizeClassMap[tile.size], 'astro-tile--quote']} style={`background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url(${randomQuote.image});`}>
 											<div class="astro-quote">
 												<p>&quot;{randomQuote.text}&quot;</p>
 												<span>- {randomQuote.author}</span>
@@ -230,7 +249,6 @@ const sizeClassMap = {
 
 	.astro-tile--quote {
 		color: white;
-		background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url({randomQuote.image});
 		background-size: cover;
 		background-position: center;
 	}
