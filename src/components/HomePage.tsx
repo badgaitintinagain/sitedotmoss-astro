@@ -1,5 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, memo, useMemo } from "react";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import Background from "@/components/Background";
 import Tile from "@/components/Tile";
 import WeatherTile from "@/components/WeatherTile";
 import AdTile from "@/components/AdTile";
@@ -121,71 +123,74 @@ const HomePage = () => {
   );
 
   return (
-    <div ref={containerRef} className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto font-sans flex items-center justify-center">
-      <ProfileButton />
-      <div className="absolute inset-0 bg-white/5 dark:bg-black/10 z-10 backdrop-blur-[1px] pointer-events-none" />
+    <ThemeProvider>
+      <Background />
+      <div ref={containerRef} className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto font-sans flex items-center justify-center">
+        <ProfileButton />
+        <div className="absolute inset-0 bg-white/5 dark:bg-black/10 z-10 backdrop-blur-[1px] pointer-events-none" />
 
-      <div className="relative z-20 w-full flex flex-col items-center justify-center py-12 min-h-screen">
-        <div className="w-fit max-w-full px-6 md:px-12 lg:px-16">
-          <header className="mb-8 text-left dashboard-header">
-            <h1 className="text-5xl md:text-6xl font-light tracking-tight text-foreground drop-shadow-sm">site(.)moss</h1>
-          </header>
+        <div className="relative z-20 w-full flex flex-col items-center justify-center py-12 min-h-screen">
+          <div className="w-fit max-w-full px-6 md:px-12 lg:px-16">
+            <header className="mb-8 text-left dashboard-header">
+              <h1 className="text-5xl md:text-6xl font-light tracking-tight text-foreground drop-shadow-sm">site(.)moss</h1>
+            </header>
 
-          <main className="dashboard-main w-fit max-w-full gap-x-8 gap-y-10 no-scrollbar pb-8">
-            {dashboardConfig.map((group) => (
-              <div key={group.title} className="flex flex-col gap-3 w-fit items-start flex-shrink-0">
-                <h2 className="text-[10px] font-bold uppercase tracking-widest opacity-60 ml-1 text-foreground">
-                  {group.title}
-                </h2>
-                <div className="grid grid-rows-5 grid-flow-col gap-1.5 h-[21.5rem] w-max">
-                  {group.tiles.map((tile) => {
-                    if (tile.component) {
-                      const Component = tile.component;
-                      return <Component key={tile.id} {...tile.props} />;
-                    }
+            <main className="dashboard-main w-fit max-w-full gap-x-8 gap-y-10 no-scrollbar pb-8">
+              {dashboardConfig.map((group) => (
+                <div key={group.title} className="flex flex-col gap-3 w-fit items-start flex-shrink-0">
+                  <h2 className="text-[10px] font-bold uppercase tracking-widest opacity-60 ml-1 text-foreground">
+                    {group.title}
+                  </h2>
+                  <div className="grid grid-rows-5 grid-flow-col gap-1.5 h-[21.5rem] w-max">
+                    {group.tiles.map((tile) => {
+                      if (tile.component) {
+                        const Component = tile.component;
+                        return <Component key={tile.id} {...tile.props} />;
+                      }
 
-                    if (tile.id === 'quote') {
+                      if (tile.id === 'quote') {
+                        return (
+                          <Tile key={tile.id} size={tile.size} bgImage={randomQuote.image} bgClass="bg-black/40 border-white/20" className="text-white">
+                            <div className="flex flex-col items-center justify-center w-full h-full px-6 text-center">
+                              <p className="text-xs italic font-medium leading-tight mb-2">&quot;{randomQuote.text}&quot;</p>
+                              <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">- {randomQuote.author}</p>
+                            </div>
+                          </Tile>
+                        );
+                      }
+
+                      const extraProps = tile.id === 'settings' ? { onClick: () => setIsSettingsOpen(true) } : {};
+
                       return (
-                        <Tile key={tile.id} size={tile.size} bgImage={randomQuote.image} bgClass="bg-black/40 border-white/20" className="text-white">
-                          <div className="flex flex-col items-center justify-center w-full h-full px-6 text-center">
-                            <p className="text-xs italic font-medium leading-tight mb-2">&quot;{randomQuote.text}&quot;</p>
-                            <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">- {randomQuote.author}</p>
-                          </div>
+                        <Tile
+                          key={tile.id}
+                          size={tile.size}
+                          label={tile.label}
+                          icon={tile.icon}
+                          accentType={tile.accent}
+                          opacity={tile.opacity}
+                          {...extraProps}
+                        >
+                          {tile.id === 'project' && (
+                            <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center">
+                              <div className="w-10 h-10 rounded-full border-2 border-tile-text/30 flex items-center justify-center mb-1">
+                                <span className="text-xs font-bold text-tile-text">75%</span>
+                              </div>
+                              <p className="text-[8px] font-bold uppercase tracking-tighter text-tile-text">In Progress</p>
+                            </div>
+                          )}
                         </Tile>
                       );
-                    }
-
-                    const extraProps = tile.id === 'settings' ? { onClick: () => setIsSettingsOpen(true) } : {};
-
-                    return (
-                      <Tile
-                        key={tile.id}
-                        size={tile.size}
-                        label={tile.label}
-                        icon={tile.icon}
-                        accentType={tile.accent}
-                        opacity={tile.opacity}
-                        {...extraProps}
-                      >
-                        {tile.id === 'project' && (
-                          <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center">
-                            <div className="w-10 h-10 rounded-full border-2 border-tile-text/30 flex items-center justify-center mb-1">
-                              <span className="text-xs font-bold text-tile-text">75%</span>
-                            </div>
-                            <p className="text-[8px] font-bold uppercase tracking-tighter text-tile-text">In Progress</p>
-                          </div>
-                        )}
-                      </Tile>
-                    );
-                  })}
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </main>
+              ))}
+            </main>
+          </div>
         </div>
+        <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       </div>
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-    </div>
+    </ThemeProvider>
   );
 };
 
