@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Tile from './Tile';
 import { X, Microscope, Upload, Loader2, ImageIcon, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
-import gsap from 'gsap';
 
 // --- Types ---
 interface CellResult {
@@ -151,12 +150,23 @@ const NextWbcTile: React.FC<NextWbcProps> = ({ size = '2x1', accent = 'primary',
   };
 
   useEffect(() => {
-    if (isOpen && modalRef.current) {
+    let active = true;
+
+    const run = async () => {
+      const gsap = (await import('gsap')).default;
+      if (!active || !isOpen || !modalRef.current) return;
+
       gsap.fromTo(modalRef.current,
         { opacity: 0, scale: 0.9, y: 20 },
         { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "power2.out" }
       );
-    }
+    };
+
+    void run();
+
+    return () => {
+      active = false;
+    };
   }, [isOpen]);
 
   const resetState = useCallback(() => {

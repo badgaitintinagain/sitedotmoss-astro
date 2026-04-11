@@ -35,8 +35,8 @@ const ClockTile: React.FC<ClockProps> = ({ size = '2x2', accent = 'primary', opa
       setDigitalTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
     }
 
-    const intervalId = setInterval(setTime, 1000);
-    setTime(); 
+    const intervalId = window.setInterval(setTime, 1000);
+    setTime();
 
     return () => clearInterval(intervalId);
   }, []);

@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Tile from './Tile';
 import { Send, Loader2, X, BrainCircuit, User } from 'lucide-react';
-import gsap from 'gsap'; 
 
 interface Message {
   role: 'user' | 'bot';
@@ -49,12 +48,23 @@ const AIChatTile: React.FC<AIProps> = ({ size = '2x2', accent = 'secondary', opa
 
   // Animation
   useEffect(() => {
-    if (isOpen && modalRef.current) {
-      gsap.fromTo(modalRef.current, 
+    let active = true;
+
+    const run = async () => {
+      const gsap = (await import('gsap')).default;
+      if (!active || !isOpen || !modalRef.current) return;
+
+      gsap.fromTo(modalRef.current,
         { opacity: 0, scale: 0.9, y: 20 },
         { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "power2.out" }
       );
-    }
+    };
+
+    void run();
+
+    return () => {
+      active = false;
+    };
   }, [isOpen]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {

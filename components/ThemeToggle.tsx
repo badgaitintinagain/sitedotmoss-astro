@@ -2,19 +2,29 @@
 import React, { useRef, useEffect } from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
-import gsap from 'gsap';
 
 const ThemeToggle: React.FC = () => {
   const { theme, toggleTheme } = useTheme();
   const iconRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (iconRef.current) {
-      gsap.fromTo(iconRef.current, 
+    let active = true;
+
+    const run = async () => {
+      const gsap = (await import('gsap')).default;
+      if (!active || !iconRef.current) return;
+
+      gsap.fromTo(iconRef.current,
         { rotation: theme === 'dark' ? -180 : 0, opacity: 0, scale: 0.5 },
         { rotation: 0, opacity: 1, scale: 1, duration: 0.6, ease: 'back.out(1.7)' }
       );
-    }
+    };
+
+    void run();
+
+    return () => {
+      active = false;
+    };
   }, [theme]);
 
   return (

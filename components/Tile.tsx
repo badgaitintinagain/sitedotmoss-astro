@@ -1,7 +1,6 @@
 "use client";
 import React, { useRef, useEffect, memo } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import gsap from 'gsap';
 
 interface TileProps {
   size: '1x1' | '2x1' | '2x2' | '2x3' | '3x2';
@@ -41,63 +40,79 @@ const Tile: React.FC<TileProps> = memo(({ size, label, className = '', children,
     const glow = glowRef.current;
     if (!tile || !glow) return;
 
-    const ctx = gsap.context(() => {
-      // Robust entry animation
-      gsap.fromTo(tile, 
-        { opacity: 0, scale: 0.98, y: 5 },
-        { 
-          opacity: 1, 
-          scale: 1, 
-          y: 0, 
-          duration: 0.8, 
-          ease: 'power2.out',
-          delay: Math.random() * 0.3,
-          clearProps: 'opacity,scale,y' // Clear GSAP styles after entry so CSS/Hover stays clean
-        }
-      );
+    let active = true;
+    let cleanup: (() => void) | undefined;
 
-      const onMouseEnter = () => {
-        gsap.to(glow, { opacity: 1, duration: 0.3, ease: 'power2.out' });
-        gsap.to(tile, {
-          y: -4,
-          filter: 'brightness(1.1)',
-          duration: 0.3,
-          ease: 'power2.out',
-          borderColor: 'rgba(255,255,255,0.6)',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
-        });
+    const run = async () => {
+      const gsap = (await import('gsap')).default;
+      if (!active) return;
+
+      const ctx = gsap.context(() => {
+        gsap.fromTo(tile,
+          { opacity: 0, scale: 0.98, y: 5 },
+          {
+            opacity: 1,
+            scale: 1,
+            y: 0,
+            duration: 0.8,
+            ease: 'power2.out',
+            delay: Math.random() * 0.3,
+            clearProps: 'opacity,scale,y'
+          }
+        );
+
+        const onMouseEnter = () => {
+          gsap.to(glow, { opacity: 1, duration: 0.3, ease: 'power2.out' });
+          gsap.to(tile, {
+            y: -4,
+            filter: 'brightness(1.1)',
+            duration: 0.3,
+            ease: 'power2.out',
+            borderColor: 'rgba(255,255,255,0.6)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+          });
+        };
+
+        const onMouseLeave = () => {
+          gsap.to(glow, { opacity: 0, duration: 0.3, ease: 'power2.inOut' });
+          gsap.to(tile, {
+            y: 0,
+            filter: 'brightness(1)',
+            duration: 0.3,
+            ease: 'power2.inOut',
+            borderColor: 'rgba(255,255,255,0.25)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+          });
+        };
+
+        const onMouseMove = (e: MouseEvent) => {
+          const rect = tile.getBoundingClientRect();
+          tile.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+          tile.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+        };
+
+        tile.addEventListener('mouseenter', onMouseEnter);
+        tile.addEventListener('mouseleave', onMouseLeave);
+        tile.addEventListener('mousemove', onMouseMove);
+
+        cleanup = () => {
+          tile.removeEventListener('mouseenter', onMouseEnter);
+          tile.removeEventListener('mouseleave', onMouseLeave);
+          tile.removeEventListener('mousemove', onMouseMove);
+        };
+      }, tile);
+
+      cleanup = () => {
+        ctx.revert();
       };
+    };
 
-      const onMouseLeave = () => {
-        gsap.to(glow, { opacity: 0, duration: 0.3, ease: 'power2.inOut' });
-        gsap.to(tile, {
-          y: 0,
-          filter: 'brightness(1)',
-          duration: 0.3,
-          ease: 'power2.inOut',
-          borderColor: 'rgba(255,255,255,0.25)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-        });
-      };
+    void run();
 
-      const onMouseMove = (e: MouseEvent) => {
-        const rect = tile.getBoundingClientRect();
-        tile.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-        tile.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
-      };
-
-      tile.addEventListener('mouseenter', onMouseEnter);
-      tile.addEventListener('mouseleave', onMouseLeave);
-      tile.addEventListener('mousemove', onMouseMove);
-
-      return () => {
-        tile.removeEventListener('mouseenter', onMouseEnter);
-        tile.removeEventListener('mouseleave', onMouseLeave);
-        tile.removeEventListener('mousemove', onMouseMove);
-      };
-    }, tile);
-
-    return () => ctx.revert();
+    return () => {
+      active = false;
+      cleanup?.();
+    };
   }, []);
 
   return (

@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { User, LogIn, LogOut, Settings, Shield, Sun, Moon } from 'lucide-react';
-import gsap from 'gsap';
 import { useTheme } from './ThemeProvider';
 
 interface AuthUser {
@@ -58,7 +57,12 @@ const ProfileButton: React.FC = () => {
 
   // Animation for dropdown
   useEffect(() => {
-    if (isOpen && menuRef.current) {
+    let active = true;
+
+    const run = async () => {
+      const gsap = (await import('gsap')).default;
+      if (!active || !isOpen || !menuRef.current) return;
+
       gsap.fromTo(
         menuRef.current,
         {
@@ -81,18 +85,35 @@ const ProfileButton: React.FC = () => {
           ease: 'power3.out'
         }
       );
-    }
+    };
+
+    void run();
+
+    return () => {
+      active = false;
+    };
   }, [isOpen]);
 
   // Animation for modal
   useEffect(() => {
-    if (showLogin && modalRef.current) {
+    let active = true;
+
+    const run = async () => {
+      const gsap = (await import('gsap')).default;
+      if (!active || !showLogin || !modalRef.current) return;
+
       gsap.fromTo(
         modalRef.current,
         { opacity: 0, scale: 0.9, y: 20 },
         { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: 'power2.out' }
       );
-    }
+    };
+
+    void run();
+
+    return () => {
+      active = false;
+    };
   }, [showLogin]);
 
   const handleLogin = async (email: string, password: string) => {

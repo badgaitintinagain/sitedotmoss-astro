@@ -2,7 +2,6 @@
 import React, { useRef, useEffect, useState, memo, useMemo } from 'react';
 import { X, Sun, Moon, Check, Ghost, Image as ImageIcon, Wind, Zap } from 'lucide-react';
 import Image from 'next/image';
-import gsap from 'gsap';
 import { useTheme } from './ThemeProvider';
 
 interface SettingsModalProps {
@@ -45,15 +44,30 @@ const SettingsModal: React.FC<SettingsModalProps> = memo(({ isOpen, onClose }: S
   ]), []);
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      if (isOpen && modalRef.current) {
-        gsap.fromTo(modalRef.current, 
-          { opacity: 0, scale: 0.9, y: 20 },
-          { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "back.out(1.4)" }
-        );
-      }
-    });
-    return () => ctx.revert();
+    let active = true;
+    let cleanup: (() => void) | undefined;
+
+    const run = async () => {
+      const gsap = (await import('gsap')).default;
+      if (!active || !isOpen || !modalRef.current) return;
+
+      const ctx = gsap.context(() => {
+        if (isOpen && modalRef.current) {
+          gsap.fromTo(modalRef.current,
+            { opacity: 0, scale: 0.9, y: 20 },
+            { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "back.out(1.4)" }
+          );
+        }
+      });
+      cleanup = () => ctx.revert();
+    };
+
+    void run();
+
+    return () => {
+      active = false;
+      cleanup?.();
+    };
   }, [isOpen]);
 
   if (!isOpen) return null;

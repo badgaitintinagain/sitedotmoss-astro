@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useRef, memo } from 'react';
 import { useTheme } from './ThemeProvider';
-import gsap from 'gsap';
 
 const Background: React.FC = () => {
   const { theme, bgType, bgValue, glassBlur } = useTheme();
@@ -10,46 +9,72 @@ const Background: React.FC = () => {
 
   // Separate effect for background color/image logic to prevent flashes
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      if (!bgRef.current) return;
+    let active = true;
+    let cleanup: (() => void) | undefined;
 
-      if (bgType === 'color') {
-        const targetColor = bgValue || (theme === 'dark' ? '#1A1410' : '#F2EBE3');
-        gsap.to(bgRef.current, {
-          backgroundColor: targetColor,
-          backgroundImage: 'none',
-          duration: 1.2,
-          ease: 'power3.out',
-          overwrite: 'auto',
-          force3D: true, // Force GPU acceleration
-        });
-      } else if (bgType === 'image' && bgValue) {
-        gsap.to(bgRef.current, {
-          backgroundImage: `url(${bgValue})`,
-          backgroundColor: theme === 'dark' ? '#1A1410' : '#F2EBE3',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          duration: 1,
-          ease: 'power2.inOut',
-          overwrite: 'auto',
-          force3D: true, // Force GPU acceleration
-        });
-      }
-    });
+    const run = async () => {
+      const gsap = (await import('gsap')).default;
+      if (!active || !bgRef.current) return;
 
-    return () => ctx.kill(); // Kill the animation without resetting properties
+      const ctx = gsap.context(() => {
+        if (!bgRef.current) return;
+
+        if (bgType === 'color') {
+          const targetColor = bgValue || (theme === 'dark' ? '#1A1410' : '#F2EBE3');
+          gsap.to(bgRef.current, {
+            backgroundColor: targetColor,
+            backgroundImage: 'none',
+            duration: 1.2,
+            ease: 'power3.out',
+            overwrite: 'auto',
+            force3D: true,
+          });
+        } else if (bgType === 'image' && bgValue) {
+          gsap.to(bgRef.current, {
+            backgroundImage: `url(${bgValue})`,
+            backgroundColor: theme === 'dark' ? '#1A1410' : '#F2EBE3',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            duration: 1,
+            ease: 'power2.inOut',
+            overwrite: 'auto',
+            force3D: true,
+          });
+        }
+      });
+
+      cleanup = () => ctx.kill();
+    };
+
+    void run();
+
+    return () => {
+      active = false;
+      cleanup?.();
+    };
   }, [theme, bgType, bgValue]);
 
   // Separate effect for blur to prevent background reloading
   useEffect(() => {
-    if (layerRef.current) {
+    let active = true;
+
+    const run = async () => {
+      const gsap = (await import('gsap')).default;
+      if (!active || !layerRef.current) return;
+
       gsap.to(layerRef.current, {
         backdropFilter: `blur(${glassBlur}px)`,
         webkitBackdropFilter: `blur(${glassBlur}px)`,
         duration: 0.5,
         ease: 'power2.out'
       });
-    }
+    };
+
+    void run();
+
+    return () => {
+      active = false;
+    };
   }, [glassBlur]);
 
   return (

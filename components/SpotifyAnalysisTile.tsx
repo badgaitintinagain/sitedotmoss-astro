@@ -1,7 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Tile from './Tile';
-import gsap from 'gsap';
 import { ChevronRight, Disc3, MapPinned, Radar, Sparkles, X } from 'lucide-react';
 import clusterSummaryData from '../assets/data/cluster_summary.json';
 import divaDnaData from '../assets/data/diva_dna.json';
@@ -207,11 +206,24 @@ const SpotifyAnalysisTile: React.FC<SpotifyAnalysisTileProps> = ({
   useEffect(() => {
     if (!isOpen || !modalRef.current) return;
 
-    gsap.fromTo(
-      modalRef.current,
-      { opacity: 0, y: 20, scale: 0.985 },
-      { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power3.out' }
-    );
+    let active = true;
+
+    const run = async () => {
+      const gsap = (await import('gsap')).default;
+      if (!active || !modalRef.current) return;
+
+      gsap.fromTo(
+        modalRef.current,
+        { opacity: 0, y: 20, scale: 0.985 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power3.out' }
+      );
+    };
+
+    void run();
+
+    return () => {
+      active = false;
+    };
   }, [isOpen]);
 
   useEffect(() => {

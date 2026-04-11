@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Tile from './Tile';
 import { X, Footprints, Upload, Loader2, ImageIcon, Layers, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
-import gsap from 'gsap';
 
 // --- Types ---
 interface ShoeResult {
@@ -177,12 +176,23 @@ const ShoeDemoTile: React.FC<ShoeDemoProps> = ({ size = '2x2', accent = 'seconda
   };
 
   useEffect(() => {
-    if (isOpen && modalRef.current) {
+    let active = true;
+
+    const run = async () => {
+      const gsap = (await import('gsap')).default;
+      if (!active || !isOpen || !modalRef.current) return;
+
       gsap.fromTo(modalRef.current,
         { opacity: 0, scale: 0.9, y: 20 },
         { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "power2.out" }
       );
-    }
+    };
+
+    void run();
+
+    return () => {
+      active = false;
+    };
   }, [isOpen]);
 
   const [pipelineProgress, setPipelineProgress] = useState(0);
