@@ -65,7 +65,7 @@ const HomePage = () => {
           { id: 'blog', size: '2x2', component: BlogTile, label: 'Blog' },
           { id: 'tasks', size: '2x2', label: 'Tasks', icon: PenTool, accent: 'secondary', opacity: 40 },
           { id: 'resources', size: '1x1', component: ResourceTile, accent: 'primary', opacity: 25 },
-          { id: 'photos', size: '2x2', component: PhotosTile, label: 'Photos', accent: 'primary', opacity: 35 },
+          { id: 'photos', size: '2x1', component: PhotosTile, label: 'Photos', accent: 'primary', opacity: 35 },
           { id: 'project', size: '2x3', label: 'Project Alpha', accent: 'secondary', opacity: 50 },
           { id: 'team', size: '2x2', label: 'Team', icon: Users, accent: 'primary', opacity: 35 }
         ]
