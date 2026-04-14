@@ -100,13 +100,14 @@ body {
 
 @media (orientation: landscape) {
   .dashboard-main {
-    flex-direction: column;
+    flex-direction: row;
     flex-wrap: wrap;
     align-content: flex-start;
     justify-content: flex-start;
+    gap: 2rem;
     overflow-x: auto;
     overflow-y: hidden;
-    height: 25rem;
+    height: auto;
     width: auto;
     max-width: 100%;
   }
@@ -114,7 +115,7 @@ body {
 
 @media (orientation: landscape) and (min-width: 1280px) {
   .dashboard-main {
-    height: 52rem;
+    height: auto;
   }
 }
 
