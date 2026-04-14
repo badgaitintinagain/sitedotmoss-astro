@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Images, Upload, Download, X, WandSparkles, FolderArchive, SlidersHorizontal, Sparkles, Trash2 } from 'lucide-react';
 import Tile from './Tile';
@@ -31,6 +31,7 @@ const FORMAT_OPTIONS: Array<{ value: SupportedFormat; label: string; ext: string
 ];
 
 const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary', opacity = 35 }) => {
+  const objectUrlsRef = useRef<Set<string>>(new Set());
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<PhotosSection>('upload');
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
@@ -52,14 +53,25 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
 
   useEffect(() => {
     return () => {
-      photos.forEach((photo) => {
-        URL.revokeObjectURL(photo.previewUrl);
-        if (photo.convertedUrl) {
-          URL.revokeObjectURL(photo.convertedUrl);
-        }
-      });
+      objectUrlsRef.current.forEach((objectUrl) => URL.revokeObjectURL(objectUrl));
+      objectUrlsRef.current.clear();
     };
-  }, [photos]);
+  }, []);
+
+  const registerObjectUrl = (objectUrl: string) => {
+    objectUrlsRef.current.add(objectUrl);
+    return objectUrl;
+  };
+
+  const releaseObjectUrl = (objectUrl?: string) => {
+    if (!objectUrl) {
+      return;
+    }
+    if (objectUrlsRef.current.has(objectUrl)) {
+      URL.revokeObjectURL(objectUrl);
+      objectUrlsRef.current.delete(objectUrl);
+    }
+  };
 
   const validateIncomingFiles = (files: File[]) => {
     if (files.length === 0) {
@@ -78,7 +90,7 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
     const nextItems: PhotoItem[] = files.map((file, index) => ({
       id: `${Date.now()}-${index}-${file.name}`,
       file,
-      previewUrl: URL.createObjectURL(file),
+      previewUrl: registerObjectUrl(URL.createObjectURL(file)),
     }));
     setPhotos((prev) => [...prev, ...nextItems]);
     setStatus(`Added ${files.length} image${files.length > 1 ? 's' : ''}.`);
@@ -87,9 +99,7 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
   const clearConvertedForAll = () => {
     setPhotos((prev) =>
       prev.map((photo) => {
-        if (photo.convertedUrl) {
-          URL.revokeObjectURL(photo.convertedUrl);
-        }
+        releaseObjectUrl(photo.convertedUrl);
         return {
           ...photo,
           convertedBlob: undefined,
@@ -101,10 +111,8 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
 
   const resetAll = () => {
     photos.forEach((photo) => {
-      URL.revokeObjectURL(photo.previewUrl);
-      if (photo.convertedUrl) {
-        URL.revokeObjectURL(photo.convertedUrl);
-      }
+      releaseObjectUrl(photo.previewUrl);
+      releaseObjectUrl(photo.convertedUrl);
     });
     setPhotos([]);
     setError('');
@@ -238,10 +246,8 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
     setPhotos((prev) => {
       const target = prev.find((photo) => photo.id === id);
       if (target) {
-        URL.revokeObjectURL(target.previewUrl);
-        if (target.convertedUrl) {
-          URL.revokeObjectURL(target.convertedUrl);
-        }
+        releaseObjectUrl(target.previewUrl);
+        releaseObjectUrl(target.convertedUrl);
       }
       return prev.filter((photo) => photo.id !== id);
     });
@@ -287,14 +293,12 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
       );
     });
 
-    if (photo.convertedUrl) {
-      URL.revokeObjectURL(photo.convertedUrl);
-    }
+    releaseObjectUrl(photo.convertedUrl);
 
     return {
       ...photo,
       convertedBlob: blob,
-      convertedUrl: URL.createObjectURL(blob),
+      convertedUrl: registerObjectUrl(URL.createObjectURL(blob)),
     };
   };
 
@@ -423,7 +427,6 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
         onClick={() => setIsOpen(true)}
       >
         <div className="flex w-full items-center justify-center gap-2">
-          <Images size={18} className="opacity-85" />
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em]">Photos</p>
         </div>
       </Tile>
@@ -490,39 +493,18 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
                   </div>
                 </aside>
 
-                <div className="min-h-0 flex-1 overflow-y-auto p-4 no-scrollbar md:p-5">
-                  <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                    <div className="rounded-[18px] border border-white/20 bg-white/18 p-3 backdrop-blur-md dark:bg-white/8">
-                      <p className="text-[10px] uppercase tracking-[0.24em] text-foreground/45">Count</p>
-                      <p className="mt-1 text-sm font-semibold text-foreground">{photos.length} / {MAX_FILES_PER_UPLOAD}</p>
-                    </div>
-                    <div className="rounded-[18px] border border-white/20 bg-white/18 p-3 backdrop-blur-md dark:bg-white/8">
-                      <p className="text-[10px] uppercase tracking-[0.24em] text-foreground/45">Original</p>
-                      <p className="mt-1 text-sm font-semibold text-foreground">{originalSizeLabel}</p>
-                    </div>
-                    <div className="rounded-[18px] border border-white/20 bg-white/18 p-3 backdrop-blur-md dark:bg-white/8">
-                      <p className="text-[10px] uppercase tracking-[0.24em] text-foreground/45">Converted</p>
-                      <p className="mt-1 text-sm font-semibold text-foreground">{convertedSizeLabel}</p>
-                    </div>
-                    <div className="rounded-[18px] border border-white/20 bg-white/18 p-3 backdrop-blur-md dark:bg-white/8">
-                      <p className="text-[10px] uppercase tracking-[0.24em] text-foreground/45">Ready</p>
-                      <p className="mt-1 text-sm font-semibold text-foreground">{convertedCount}</p>
-                    </div>
-                    <div className="rounded-[18px] border border-white/20 bg-white/18 p-3 backdrop-blur-md dark:bg-white/8 sm:col-span-2">
-                      <p className="text-[10px] uppercase tracking-[0.24em] text-foreground/45">Savings</p>
-                      <p className="mt-1 text-sm font-semibold text-foreground">{convertedCount > 0 ? `${savingsPercent}% smaller` : '-'}</p>
-                    </div>
-                  </div>
-
+                <div className="min-h-0 flex-1 overflow-hidden p-4 md:p-5">
                   {activeSection === 'upload' && (
-                    <section className="space-y-4">
-                      <div className="rounded-[24px] border border-white/20 bg-[linear-gradient(135deg,rgba(255,250,245,0.66)_0%,rgba(250,244,238,0.40)_100%)] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:bg-[linear-gradient(135deg,rgba(58,46,39,0.66)_0%,rgba(48,40,33,0.52)_100%)]">
-                        <div className="mb-3 flex items-center gap-2">
+                    <section className="grid h-full min-h-0 gap-4 md:grid-cols-[1.05fr_0.95fr]">
+                      <div className="flex min-h-0 flex-col gap-4 rounded-[24px] border border-white/20 bg-[linear-gradient(135deg,rgba(255,250,245,0.66)_0%,rgba(250,244,238,0.40)_100%)] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:bg-[linear-gradient(135deg,rgba(58,46,39,0.66)_0%,rgba(48,40,33,0.52)_100%)]">
+                        <div className="flex items-center gap-2">
                           <Sparkles size={16} className="text-foreground/45" />
                           <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-60 text-foreground">Upload</h3>
+                          <span className="ml-auto text-[10px] uppercase tracking-[0.2em] text-foreground/45">{photos.length}/{MAX_FILES_PER_UPLOAD}</span>
                         </div>
-                        <p className="mb-4 text-xs text-foreground/60">Add up to 10 images each time, or upload a ZIP that contains up to 10 images.</p>
-                        <div className="grid gap-3 md:grid-cols-2">
+                        <p className="text-xs text-foreground/60">Add up to 10 images each time, or upload a ZIP that contains up to 10 images.</p>
+
+                        <div className="grid gap-3 sm:grid-cols-2">
                           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[18px] border border-white/25 bg-white/20 px-4 py-4 text-sm text-foreground/80 transition hover:bg-white/30">
                             <Upload size={16} />
                             Add Images
@@ -542,7 +524,7 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
                           }}
                           onDragLeave={() => setIsDragOver(false)}
                           onDrop={onDropFiles}
-                          className={`mt-3 rounded-[18px] border border-dashed px-4 py-5 text-center text-sm transition ${
+                          className={`rounded-[18px] border border-dashed px-4 py-4 text-center text-sm transition ${
                             isDragOver
                               ? 'border-white/45 bg-white/35 text-foreground'
                               : 'border-white/25 bg-white/14 text-foreground/70'
@@ -550,42 +532,53 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
                         >
                           Drag and drop images or one ZIP here
                         </div>
+
+                        <div className="flex items-center justify-between rounded-[16px] border border-white/18 bg-white/14 px-3 py-2 text-xs text-foreground/70">
+                          <span>{convertedCount > 0 ? `${savingsPercent}% smaller after convert` : 'Ready to batch convert'}</span>
+                          <button
+                            type="button"
+                            onClick={resetAll}
+                            disabled={photos.length === 0}
+                            className="inline-flex items-center gap-1 rounded-md border border-white/25 bg-white/25 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-foreground transition hover:bg-white/35 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Trash2 size={12} />
+                            Clear
+                          </button>
+                        </div>
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs text-foreground/60">Files in queue</p>
-                        <button
-                          type="button"
-                          onClick={resetAll}
-                          disabled={photos.length === 0}
-                          className="inline-flex items-center gap-1 rounded-md border border-white/25 bg-white/25 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-foreground transition hover:bg-white/35 disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          <Trash2 size={12} />
-                          Remove All
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                        {photos.map((photo) => (
-                          <div key={photo.id} className="group relative overflow-hidden rounded-[16px] border border-white/15 bg-white/12">
-                            <img src={photo.previewUrl} alt={photo.file.name} className="h-28 w-full object-cover" />
-                            <button
-                              type="button"
-                              onClick={() => removePhoto(photo.id)}
-                              className="absolute right-1.5 top-1.5 rounded-full border border-white/25 bg-black/35 p-1 text-white opacity-0 transition group-hover:opacity-100"
-                              aria-label="Remove photo"
-                            >
-                              <X size={12} />
-                            </button>
-                            <div className="truncate px-2 py-1.5 text-[10px] text-foreground/75">{photo.file.name}</div>
-                          </div>
-                        ))}
+                      <div className="flex min-h-0 flex-col gap-3 rounded-[24px] border border-white/20 bg-white/16 p-4 backdrop-blur-md dark:bg-white/8">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-60 text-foreground">Queue</h3>
+                          <span className="text-[10px] uppercase tracking-[0.2em] text-foreground/45">Preview</span>
+                        </div>
+                        <div className="grid flex-1 grid-cols-2 gap-2 overflow-hidden sm:grid-cols-3 lg:grid-cols-4">
+                          {photos.map((photo) => (
+                            <div key={photo.id} className="group relative overflow-hidden rounded-[16px] border border-white/15 bg-white/12">
+                              <img src={photo.previewUrl} alt={photo.file.name} className="h-24 w-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => removePhoto(photo.id)}
+                                className="absolute right-1.5 top-1.5 rounded-full border border-white/25 bg-black/35 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                                aria-label="Remove photo"
+                              >
+                                <X size={12} />
+                              </button>
+                              <div className="truncate px-2 py-1.5 text-[10px] text-foreground/75">{photo.file.name}</div>
+                            </div>
+                          ))}
+                          {photos.length === 0 && (
+                            <div className="col-span-full flex h-full items-center justify-center rounded-[16px] border border-dashed border-white/18 bg-white/8 text-center text-xs text-foreground/45">
+                              No photos yet
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </section>
                   )}
 
                   {activeSection === 'convert' && (
-                    <section className="space-y-4">
+                    <section className="grid h-full min-h-0 gap-4 md:grid-cols-[1fr_0.95fr]">
                       <div className="rounded-[24px] border border-white/20 bg-[linear-gradient(135deg,rgba(255,247,239,0.72)_0%,rgba(244,235,225,0.52)_100%)] p-4 shadow-[0_10px_30px_rgba(0,0,0,0.06)] dark:bg-[linear-gradient(135deg,rgba(57,46,39,0.70)_0%,rgba(45,38,32,0.52)_100%)]">
                         <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-60 text-foreground">Convert Settings</h3>
                         <div className="mt-3 flex flex-wrap gap-2">
@@ -646,67 +639,106 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
                             />
                           </div>
                         )}
+
+                        <button
+                          type="button"
+                          onClick={convertAllImages}
+                          disabled={photos.length === 0 || isConverting}
+                          className="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-lg bg-white/60 px-3 py-3 text-sm font-semibold text-black transition hover:bg-white/75 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <WandSparkles size={15} />
+                          {isConverting ? 'Converting...' : `Convert ${photos.length || 0} image${photos.length === 1 ? '' : 's'}`}
+                        </button>
+
+                        {isConverting && conversionTotal > 0 && (
+                          <div className="mt-4 rounded-[14px] border border-white/20 bg-white/16 p-3">
+                            <div className="mb-2 flex items-center justify-between text-xs text-foreground/65">
+                              <span>Progress</span>
+                              <span>{conversionProgress}/{conversionTotal}</span>
+                            </div>
+                            <div className="h-2 overflow-hidden rounded-full bg-white/25">
+                              <div
+                                className="h-full rounded-full bg-white/70 transition-all duration-300"
+                                style={{ width: `${Math.round((conversionProgress / conversionTotal) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={convertAllImages}
-                        disabled={photos.length === 0 || isConverting}
-                        className="inline-flex w-full items-center justify-center gap-1 rounded-lg bg-white/60 px-3 py-3 text-sm font-semibold text-black transition hover:bg-white/75 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <WandSparkles size={15} />
-                        {isConverting ? 'Converting...' : `Convert ${photos.length || 0} image${photos.length === 1 ? '' : 's'}`}
-                      </button>
-
-                      {isConverting && conversionTotal > 0 && (
-                        <div className="rounded-[14px] border border-white/20 bg-white/16 p-3">
-                          <div className="mb-2 flex items-center justify-between text-xs text-foreground/65">
-                            <span>Progress</span>
-                            <span>{conversionProgress}/{conversionTotal}</span>
+                      <div className="flex min-h-0 flex-col gap-3 rounded-[24px] border border-white/20 bg-white/16 p-4 backdrop-blur-md dark:bg-white/8">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-60 text-foreground">Summary</h3>
+                          <span className="text-[10px] uppercase tracking-[0.2em] text-foreground/45">{convertedCount} done</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div className="rounded-[16px] border border-white/18 bg-white/14 p-3">
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/45">Original</p>
+                            <p className="mt-1 font-semibold text-foreground">{originalSizeLabel}</p>
                           </div>
-                          <div className="h-2 overflow-hidden rounded-full bg-white/25">
-                            <div
-                              className="h-full rounded-full bg-white/70 transition-all duration-300"
-                              style={{ width: `${Math.round((conversionProgress / conversionTotal) * 100)}%` }}
-                            />
+                          <div className="rounded-[16px] border border-white/18 bg-white/14 p-3">
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/45">Converted</p>
+                            <p className="mt-1 font-semibold text-foreground">{convertedSizeLabel}</p>
+                          </div>
+                          <div className="rounded-[16px] border border-white/18 bg-white/14 p-3 col-span-2">
+                            <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/45">Savings</p>
+                            <p className="mt-1 font-semibold text-foreground">{convertedCount > 0 ? `${savingsPercent}% smaller` : '-'}</p>
                           </div>
                         </div>
-                      )}
+                        <p className="rounded-[16px] border border-white/18 bg-white/10 px-3 py-2 text-xs text-foreground/60">
+                          Convert only when the queue is ready. This keeps the workflow linear and removes extra steps.
+                        </p>
+                      </div>
                     </section>
                   )}
 
                   {activeSection === 'export' && (
-                    <section className="space-y-4">
+                    <section className="grid h-full min-h-0 gap-4 md:grid-cols-[1fr_0.95fr]">
                       <div className="rounded-[24px] border border-white/20 bg-white/16 p-4 backdrop-blur-md dark:bg-white/8">
                         <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-60 text-foreground">Export</h3>
-                        <p className="mt-2 text-xs text-foreground/60">Download converted images one by one or all at once.</p>
+                        <p className="mt-2 text-xs text-foreground/60">Download all converted images as one ZIP or save a single file.</p>
+
+                        <button
+                          type="button"
+                          onClick={downloadAllAsZip}
+                          disabled={convertedCount === 0 || isDownloadingAll}
+                          className="mt-4 inline-flex w-full items-center justify-center gap-1 rounded-lg border border-white/25 bg-white/35 px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-white/45 disabled:cursor-not-allowed disabled:opacity-45"
+                        >
+                          <FolderArchive size={14} />
+                          {isDownloadingAll ? 'Preparing ZIP...' : 'Download All (.zip)'}
+                        </button>
+
+                        <div className="mt-4 rounded-[16px] border border-white/18 bg-white/10 px-3 py-2 text-xs text-foreground/60">
+                          Tip: each individual file is already downloadable from the queue.
+                        </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={downloadAllAsZip}
-                        disabled={convertedCount === 0 || isDownloadingAll}
-                        className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-white/25 bg-white/35 px-3 py-2 text-sm font-semibold text-foreground transition hover:bg-white/45 disabled:cursor-not-allowed disabled:opacity-45"
-                      >
-                        <FolderArchive size={14} />
-                        {isDownloadingAll ? 'Preparing ZIP...' : 'Download All (.zip)'}
-                      </button>
-
-                      <div className="space-y-2">
-                        {photos.map((photo) => (
-                          <div key={`${photo.id}-export`} className="flex items-center justify-between rounded-[16px] border border-white/20 bg-white/14 px-3 py-2">
-                            <span className="truncate pr-2 text-xs text-foreground/75">{photo.file.name}</span>
-                            <button
-                              type="button"
-                              onClick={() => downloadOne(photo)}
-                              disabled={!photo.convertedUrl}
-                              className="inline-flex items-center gap-1 rounded-md border border-white/25 bg-white/30 px-2.5 py-1 text-xs font-semibold text-foreground transition hover:bg-white/45 disabled:cursor-not-allowed disabled:opacity-45"
-                            >
-                              <Download size={12} />
-                              Download
-                            </button>
-                          </div>
-                        ))}
+                      <div className="flex min-h-0 flex-col gap-2 rounded-[24px] border border-white/20 bg-white/16 p-4 backdrop-blur-md dark:bg-white/8">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-[10px] font-bold uppercase tracking-widest opacity-60 text-foreground">Files</h3>
+                          <span className="text-[10px] uppercase tracking-[0.2em] text-foreground/45">{photos.length}</span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 overflow-hidden">
+                          {photos.map((photo) => (
+                            <div key={`${photo.id}-export`} className="flex items-center justify-between rounded-[14px] border border-white/18 bg-white/12 px-3 py-2">
+                              <span className="truncate pr-2 text-xs text-foreground/75">{photo.file.name}</span>
+                              <button
+                                type="button"
+                                onClick={() => downloadOne(photo)}
+                                disabled={!photo.convertedUrl}
+                                className="inline-flex items-center gap-1 rounded-md border border-white/25 bg-white/30 px-2.5 py-1 text-xs font-semibold text-foreground transition hover:bg-white/45 disabled:cursor-not-allowed disabled:opacity-45"
+                              >
+                                <Download size={12} />
+                                Download
+                              </button>
+                            </div>
+                          ))}
+                          {photos.length === 0 && (
+                            <div className="rounded-[14px] border border-dashed border-white/18 bg-white/8 px-3 py-6 text-center text-xs text-foreground/45">
+                              Nothing to export yet.
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </section>
                   )}
@@ -717,17 +749,6 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
                   {status && !error && (
                     <p className="mt-4 rounded-lg border border-white/20 bg-white/20 px-3 py-2 text-sm text-foreground/85">{status}</p>
                   )}
-
-                  <div className="mt-6">
-                    <button
-                      type="button"
-                      onClick={resetAll}
-                      className="w-full rounded-lg border border-white/20 bg-white/14 px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-foreground/75 transition hover:bg-white/24"
-                    >
-                      Reset Session
-                    </button>
-                  </div>
-                </div>
               </div>
             </motion.div>
           </motion.div>
