@@ -13,9 +13,10 @@ import NextWbcTile from "@/components/NextWbcTile";
 import SpotifyAnalysisTile from "@/components/SpotifyAnalysisTile";
 import BlogTile from "@/components/BlogTile";
 import ResourceTile from "@/components/ResourceTile";
+import PhotosTile from "@/components/PhotosTile";
 import SettingsModal from "@/components/SettingsModal";
 import ProfileButton from "@/components/ProfileButton";
-import { Settings, Users, PenTool, StickyNote } from "lucide-react";
+import { Settings, Users, PenTool } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface DashboardTile {
@@ -64,7 +65,7 @@ const HomePage = () => {
           { id: 'blog', size: '2x2', component: BlogTile, label: 'Blog' },
           { id: 'tasks', size: '2x2', label: 'Tasks', icon: PenTool, accent: 'secondary', opacity: 40 },
           { id: 'resources', size: '1x1', component: ResourceTile, accent: 'primary', opacity: 25 },
-          { id: 'notes', size: '1x1', label: 'Notes', icon: StickyNote, accent: 'secondary', opacity: 35 },
+          { id: 'photos', size: '2x2', component: PhotosTile, label: 'Photos', accent: 'primary', opacity: 35 },
           { id: 'project', size: '2x3', label: 'Project Alpha', accent: 'secondary', opacity: 50 },
           { id: 'team', size: '2x2', label: 'Team', icon: Users, accent: 'primary', opacity: 35 }
         ]
