@@ -59,14 +59,6 @@ const HomePage = () => {
         ]
       },
       {
-        title: "AI Lab",
-        tiles: [
-          { id: 'spotify', size: '2x1', component: SpotifyAnalysisTile },
-          { id: 'shoedemo', size: '2x2', component: ShoeDemoTile },
-          { id: 'nextwbc', size: '2x1', component: NextWbcTile }
-        ]
-      },
-      {
         title: "Work & Focus",
         tiles: [
           { id: 'blog', size: '2x2', component: BlogTile, label: 'Blog' },
@@ -75,6 +67,14 @@ const HomePage = () => {
           { id: 'notes', size: '1x1', label: 'Notes', icon: StickyNote, accent: 'secondary', opacity: 35 },
           { id: 'project', size: '2x3', label: 'Project Alpha', accent: 'secondary', opacity: 50 },
           { id: 'team', size: '2x2', label: 'Team', icon: Users, accent: 'primary', opacity: 35 }
+        ]
+      },
+      {
+        title: "AI Lab",
+        tiles: [
+          { id: 'spotify', size: '2x1', component: SpotifyAnalysisTile },
+          { id: 'shoedemo', size: '2x2', component: ShoeDemoTile },
+          { id: 'nextwbc', size: '2x1', component: NextWbcTile }
         ]
       }
     ];
