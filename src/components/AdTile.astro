@@ -19,13 +19,6 @@ const {
 	adSlot = '',
 } = Astro.props as Props;
 ---
-
-<script
-	async
-	src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2243740976665372"
-	crossorigin="anonymous"
-></script>
-
 <div class={`tile tile-${size} astro-ad`} style={`--tile-opacity:${opacity / 100}; --tile-accent:var(--accent-${accent}); --tile-image:url(${image});`}>
 	<div class="astro-ad__content">
 		{adSlot ? (
