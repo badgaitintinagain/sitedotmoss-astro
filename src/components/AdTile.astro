@@ -6,6 +6,7 @@ interface Props {
 	size?: '1x1' | '2x1' | '2x2' | '2x3' | '3x2';
 	accent?: 'primary' | 'secondary';
 	opacity?: number;
+	adSlot?: string;
 }
 
 const {
@@ -15,17 +16,41 @@ const {
 	size = '3x2',
 	accent = 'secondary',
 	opacity = 35,
+	adSlot = '',
 } = Astro.props as Props;
 ---
 
+<script
+	async
+	src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2243740976665372"
+	crossorigin="anonymous"
+></script>
+
 <div class={`tile tile-${size} astro-ad`} style={`--tile-opacity:${opacity / 100}; --tile-accent:var(--accent-${accent}); --tile-image:url(${image});`}>
 	<div class="astro-ad__content">
-		<h3>{title}</h3>
-		<p>{description}</p>
-		<div class="astro-ad__cta">
-			<span>Learn More</span>
-			<span aria-hidden="true">↗</span>
-		</div>
+		{adSlot ? (
+			<>
+				<ins
+					class="adsbygoogle"
+					style="display:block"
+					data-ad-client="ca-pub-2243740976665372"
+					data-ad-slot={adSlot}
+					data-ad-format="auto"
+					data-full-width-responsive="true"
+				></ins>
+				<script is:inline>
+					(adsbygoogle = window.adsbygoogle || []).push({});
+				</script>
+			</>
+		) : (
+			<>
+				<h3>{title}</h3>
+				<p>{description}</p>
+				<div class="astro-ad__cta">
+					<span>Set adSlot to enable AdSense</span>
+				</div>
+			</>
+		)}
 	</div>
 </div>
 
@@ -47,6 +72,9 @@ const {
 	.astro-ad__content {
 		position: relative;
 		z-index: 1;
+		display: grid;
+		place-items: center;
+		min-height: 120px;
 		margin: auto 0.25rem 0.125rem;
 		padding: 0.6rem 0.75rem;
 		text-align: center;
