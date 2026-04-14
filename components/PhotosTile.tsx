@@ -421,14 +421,12 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
     <>
       <Tile
         size={size}
+        label="Photos"
         icon={Images}
         accentType={accent}
         opacity={opacity}
         onClick={() => setIsOpen(true)}
       >
-        <div className="flex w-full items-center justify-center gap-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em]">Photos</p>
-        </div>
       </Tile>
 
       <AnimatePresence>

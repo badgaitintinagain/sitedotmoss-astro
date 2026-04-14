@@ -103,8 +103,13 @@ const Tile: React.FC<TileProps> = memo(({ size, label, className = '', children,
         {Icon && <Icon size={isSmall ? 24 : 32} strokeWidth={1.5} className="opacity-90 flex-shrink-0" />}
         {children}
       </div>
-      {!isSmall && label && (
+      {label && !isSmall && (
         <span className="relative z-10 text-[7px] uppercase tracking-widest font-bold mt-auto opacity-80 drop-shadow-sm">
+          {label}
+        </span>
+      )}
+      {label && isSmall && (
+        <span className="absolute bottom-2 left-2 z-10 text-[7px] uppercase tracking-widest font-bold opacity-80 drop-shadow-sm">
           {label}
         </span>
       )}
