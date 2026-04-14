@@ -749,6 +749,7 @@ const PhotosTile: React.FC<PhotosTileProps> = ({ size = '2x1', accent = 'primary
                   {status && !error && (
                     <p className="mt-4 rounded-lg border border-white/20 bg-white/20 px-3 py-2 text-sm text-foreground/85">{status}</p>
                   )}
+                </div>
               </div>
             </motion.div>
           </motion.div>
