@@ -1,5 +1,6 @@
 "use client";
-import React, { useRef, useEffect, useState, memo, useMemo } from 'react';
+import React, { useState, memo, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { X, Sun, Moon, Check, Ghost, Image as ImageIcon, Wind, Zap } from 'lucide-react';
 import Image from 'next/image';
 import { useTheme } from './ThemeProvider';
@@ -14,7 +15,6 @@ const SettingsModal: React.FC<SettingsModalProps> = memo(({ isOpen, onClose }: S
     theme, toggleTheme, isGrayscale, setGrayscale,
     bgType, bgValue, setBgValue, glassBlur, setGlassBlur, setBgType
   } = useTheme();
-  const modalRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [activeSection, setActiveSection] = useState<'interface' | 'canvas' | 'glass' | 'accessibility'>('interface');
 
@@ -43,33 +43,6 @@ const SettingsModal: React.FC<SettingsModalProps> = memo(({ isOpen, onClose }: S
     { id: 'accessibility' as const, label: 'Accessibility', icon: Ghost }
   ]), []);
 
-  useEffect(() => {
-    let active = true;
-    let cleanup: (() => void) | undefined;
-
-    const run = async () => {
-      const gsap = (await import('gsap')).default;
-      if (!active || !isOpen || !modalRef.current) return;
-
-      const ctx = gsap.context(() => {
-        if (isOpen && modalRef.current) {
-          gsap.fromTo(modalRef.current,
-            { opacity: 0, scale: 0.9, y: 20 },
-            { opacity: 1, scale: 1, y: 0, duration: 0.5, ease: "back.out(1.4)" }
-          );
-        }
-      });
-      cleanup = () => ctx.revert();
-    };
-
-    void run();
-
-    return () => {
-      active = false;
-      cleanup?.();
-    };
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
   return (
@@ -81,12 +54,12 @@ const SettingsModal: React.FC<SettingsModalProps> = memo(({ isOpen, onClose }: S
       />
       
       {/* App Window */}
-      <div 
-        ref={modalRef}
+      <motion.div
         className="relative w-full max-w-xl h-[81vh] rounded-[4px] border border-foreground/20 bg-background/24 text-foreground overflow-hidden flex flex-col shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl backdrop-saturate-150 transition-all duration-500"
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: isDragging ? 0.15 : 1, scale: isDragging ? 0.98 : 1, y: 0 }}
+        transition={{ duration: 0.5, type: 'spring', bounce: 0.25 }}
         style={{ 
-          opacity: isDragging ? 0.15 : 1,
-          transform: isDragging ? 'scale(0.98)' : 'scale(1)',
           pointerEvents: isDragging ? 'none' : 'auto'
         }}
       >
@@ -264,7 +237,7 @@ const SettingsModal: React.FC<SettingsModalProps> = memo(({ isOpen, onClose }: S
         <div className="p-5 text-center border-t border-foreground/15 opacity-35 mt-auto flex-shrink-0 bg-background/14 backdrop-blur-md">
           <p className="text-[8px] uppercase tracking-[0.3em] text-foreground">site(.)moss, Built by Moss. Refined by Claude. (NextJS, React, Turso SQLite and Huggingface)</p>
         </div>
-      </div>
+      </motion.div>
       
       {/* Slider Helper (External to modal so it doesn't fade) */}
       {isDragging && (

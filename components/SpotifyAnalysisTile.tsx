@@ -1,5 +1,6 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import Tile from './Tile';
 import { ChevronRight, Disc3, MapPinned, Radar, Sparkles, X } from 'lucide-react';
 import clusterSummaryData from '../assets/data/cluster_summary.json';
@@ -186,7 +187,6 @@ const SpotifyAnalysisTile: React.FC<SpotifyAnalysisTileProps> = ({
   const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
   const [selectedEraIndex, setSelectedEraIndex] = useState(0);
   const [discoImageIndex, setDiscoImageIndex] = useState(() => Math.floor(Math.random() * DISCO_DYNAMO_IMAGES.length));
-  const modalRef = useRef<HTMLDivElement>(null);
 
   const clusters = clusterSummaryData as ClusterData[];
   const tracks = useMemo(
@@ -202,29 +202,6 @@ const SpotifyAnalysisTile: React.FC<SpotifyAnalysisTileProps> = ({
     });
     return map;
   }, [tracks]);
-
-  useEffect(() => {
-    if (!isOpen || !modalRef.current) return;
-
-    let active = true;
-
-    const run = async () => {
-      const gsap = (await import('gsap')).default;
-      if (!active || !modalRef.current) return;
-
-      gsap.fromTo(
-        modalRef.current,
-        { opacity: 0, y: 20, scale: 0.985 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power3.out' }
-      );
-    };
-
-    void run();
-
-    return () => {
-      active = false;
-    };
-  }, [isOpen]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -408,18 +385,26 @@ const SpotifyAnalysisTile: React.FC<SpotifyAnalysisTileProps> = ({
         </div>
       </Tile>
 
+      <AnimatePresence>
       {isOpen && (
-        <div
+        <motion.div
           className="fixed inset-0 z-50 bg-black/60 p-4 backdrop-blur-lg sm:p-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
           onClick={() => setIsOpen(false)}
         >
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(56,189,248,0.25)_0%,rgba(56,189,248,0.06)_26%,transparent_52%),radial-gradient(circle_at_78%_82%,rgba(236,72,153,0.20)_0%,rgba(236,72,153,0.06)_24%,transparent_50%)]" />
           <div className="pointer-events-none absolute inset-0 opacity-70 [background-image:radial-gradient(rgba(255,255,255,0.18)_0.6px,transparent_0.6px)] [background-size:24px_24px]" />
-          <div
-            ref={modalRef}
+          <motion.div
             onClick={event => event.stopPropagation()}
             style={{ backdropFilter: 'url(#liquidGlassWarp) blur(18px) saturate(170%)' }}
             className="mx-auto flex h-[calc(100dvh-2rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[22px] border border-white/20 bg-background/80 text-foreground shadow-[0_26px_100px_rgba(0,0,0,0.45)] sm:h-[calc(100dvh-3rem)]"
+            initial={{ opacity: 0, y: 20, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
           >
             <div className="border-b border-white/20 px-4 py-2.5 sm:px-5 sm:py-3">
               <div className="flex items-center justify-between gap-3">
@@ -829,9 +814,10 @@ const SpotifyAnalysisTile: React.FC<SpotifyAnalysisTileProps> = ({
                 <p className="sm:text-right">Madonna tracks analyzed: {madonnaTracks.length}</p>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </>
   );
 };

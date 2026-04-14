@@ -1,5 +1,6 @@
 "use client";
-import React, { useRef, useEffect, memo } from 'react';
+import React, { useMemo, useRef, useState, memo } from 'react';
+import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 
 interface TileProps {
@@ -17,7 +18,8 @@ interface TileProps {
 
 const Tile: React.FC<TileProps> = memo(({ size, label, className = '', children, bgClass = '', bgImage, icon: Icon, onClick, accentType, opacity }) => {
   const tileRef = useRef<HTMLDivElement>(null);
-  const glowRef = useRef<HTMLDivElement>(null);
+  const [isHovered, setIsHovered] = useState(false);
+  const entryDelay = useMemo(() => Math.random() * 0.3, []);
 
   // Use a fallback opacity if not provided
   const effectiveOpacity = opacity !== undefined ? opacity / 100 : 0.45;
@@ -35,91 +37,32 @@ const Tile: React.FC<TileProps> = memo(({ size, label, className = '', children,
 
   const isSmall = size === '1x1' || size === '2x1';
 
-  useEffect(() => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const tile = tileRef.current;
-    const glow = glowRef.current;
-    if (!tile || !glow) return;
-
-    let active = true;
-    let cleanup: (() => void) | undefined;
-
-    const run = async () => {
-      const gsap = (await import('gsap')).default;
-      if (!active) return;
-
-      const ctx = gsap.context(() => {
-        gsap.fromTo(tile,
-          { opacity: 0, scale: 0.98, y: 5 },
-          {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            duration: 0.8,
-            ease: 'power2.out',
-            delay: Math.random() * 0.3,
-            clearProps: 'opacity,scale,y'
-          }
-        );
-
-        const onMouseEnter = () => {
-          gsap.to(glow, { opacity: 1, duration: 0.3, ease: 'power2.out' });
-          gsap.to(tile, {
-            y: -4,
-            filter: 'brightness(1.1)',
-            duration: 0.3,
-            ease: 'power2.out',
-            borderColor: 'rgba(255,255,255,0.6)',
-            boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
-          });
-        };
-
-        const onMouseLeave = () => {
-          gsap.to(glow, { opacity: 0, duration: 0.3, ease: 'power2.inOut' });
-          gsap.to(tile, {
-            y: 0,
-            filter: 'brightness(1)',
-            duration: 0.3,
-            ease: 'power2.inOut',
-            borderColor: 'rgba(255,255,255,0.25)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-          });
-        };
-
-        const onMouseMove = (e: MouseEvent) => {
-          const rect = tile.getBoundingClientRect();
-          tile.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-          tile.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
-        };
-
-        tile.addEventListener('mouseenter', onMouseEnter);
-        tile.addEventListener('mouseleave', onMouseLeave);
-        tile.addEventListener('mousemove', onMouseMove);
-
-        cleanup = () => {
-          tile.removeEventListener('mouseenter', onMouseEnter);
-          tile.removeEventListener('mouseleave', onMouseLeave);
-          tile.removeEventListener('mousemove', onMouseMove);
-        };
-      }, tile);
-
-      cleanup = () => {
-        ctx.revert();
-      };
-    };
-
-    void run();
-
-    return () => {
-      active = false;
-      cleanup?.();
-    };
-  }, []);
+    if (!tile) return;
+    const rect = tile.getBoundingClientRect();
+    tile.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+    tile.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+  };
 
   return (
-    <div 
+    <motion.div
       ref={tileRef}
       onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onMouseMove={handleMouseMove}
       className={`tile relative overflow-hidden group ${sizeClasses[size]} flex flex-col ${isSmall ? 'justify-center items-center' : 'justify-end items-start'} p-2 text-left border cursor-pointer ${textClass} ${className}`}
+      initial={{ opacity: 0, scale: 0.98, y: 5 }}
+      animate={{
+        opacity: 1,
+        scale: 1,
+        y: isHovered ? -4 : 0,
+        filter: isHovered ? 'brightness(1.1)' : 'brightness(1)',
+        borderColor: isHovered ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)',
+        boxShadow: isHovered ? '0 20px 40px rgba(0,0,0,0.15)' : '0 4px 12px rgba(0,0,0,0.05)'
+      }}
+      transition={{ duration: 0.3, ease: 'easeOut', opacity: { duration: 0.8, delay: entryDelay } }}
     >
       {/* Base Color Background (from Palette) */}
       {accentType && (
@@ -146,13 +89,14 @@ const Tile: React.FC<TileProps> = memo(({ size, label, className = '', children,
       {bgImage && <div className="absolute inset-0 z-0 bg-black/40 group-hover:bg-black/25 transition-colors duration-500" />}
 
       {/* Gradient Blur Overlay */}
-      <div 
-        ref={glowRef}
+      <motion.div
         className="pointer-events-none absolute inset-0 opacity-0 z-0"
         style={{
           background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.4) 0%, transparent 60%)',
           filter: 'blur(20px)',
         }}
+        animate={{ opacity: isHovered ? 1 : 0 }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
       />
       
       <div className={`relative z-10 flex-1 w-full flex items-center justify-center ${isSmall ? 'gap-2' : ''}`}>
@@ -164,7 +108,7 @@ const Tile: React.FC<TileProps> = memo(({ size, label, className = '', children,
           {label}
         </span>
       )}
-    </div>
+    </motion.div>
   );
 });
 

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import Tile from './Tile';
 import { Send, Loader2, X, BrainCircuit, User } from 'lucide-react';
 
@@ -25,8 +26,7 @@ const AIChatTile: React.FC<AIProps> = ({ size = '2x2', accent = 'secondary', opa
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  const modalRef = useRef<HTMLDivElement>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const clientRef = useRef<GradioClient | null>(null);
 
@@ -45,27 +45,6 @@ const AIChatTile: React.FC<AIProps> = ({ size = '2x2', accent = 'secondary', opa
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-  // Animation
-  useEffect(() => {
-    let active = true;
-
-    const run = async () => {
-      const gsap = (await import('gsap')).default;
-      if (!active || !isOpen || !modalRef.current) return;
-
-      gsap.fromTo(modalRef.current,
-        { opacity: 0, scale: 0.9, y: 20 },
-        { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "power2.out" }
-      );
-    };
-
-    void run();
-
-    return () => {
-      active = false;
-    };
-  }, [isOpen]);
 
   const handleSendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -119,8 +98,15 @@ const AIChatTile: React.FC<AIProps> = ({ size = '2x2', accent = 'secondary', opa
         </div>
       </Tile>
 
+      <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
+        <motion.div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-black/60 backdrop-blur-md"
@@ -128,9 +114,12 @@ const AIChatTile: React.FC<AIProps> = ({ size = '2x2', accent = 'secondary', opa
           />
           
           {/* App Window */}
-          <div 
-            ref={modalRef}
+          <motion.div
             className="relative w-full max-w-4xl h-[80vh] bg-background border border-foreground/10 rounded-2xl overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 10 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-foreground/5 bg-foreground/5">
@@ -203,9 +192,10 @@ const AIChatTile: React.FC<AIProps> = ({ size = '2x2', accent = 'secondary', opa
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </>
   );
 };

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import Tile from './Tile';
 import { X, Footprints, Upload, Loader2, ImageIcon, Layers, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -157,8 +158,7 @@ const ShoeDemoTile: React.FC<ShoeDemoProps> = ({ size = '2x2', accent = 'seconda
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<InferenceResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  
-  const modalRef = useRef<HTMLDivElement>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const clientRef = useRef<GradioClient | null>(null);
   const dropzoneRef = useRef<HTMLDivElement>(null);
@@ -174,26 +174,6 @@ const ShoeDemoTile: React.FC<ShoeDemoProps> = ({ size = '2x2', accent = 'seconda
     clientRef.current = await Client.connect(HF_REPO_ID);
     return clientRef.current;
   };
-
-  useEffect(() => {
-    let active = true;
-
-    const run = async () => {
-      const gsap = (await import('gsap')).default;
-      if (!active || !isOpen || !modalRef.current) return;
-
-      gsap.fromTo(modalRef.current,
-        { opacity: 0, scale: 0.9, y: 20 },
-        { opacity: 1, scale: 1, y: 0, duration: 0.4, ease: "power2.out" }
-      );
-    };
-
-    void run();
-
-    return () => {
-      active = false;
-    };
-  }, [isOpen]);
 
   const [pipelineProgress, setPipelineProgress] = useState(0);
   const [pipelineLog, setPipelineLog] = useState<string[]>([]);
@@ -329,16 +309,26 @@ const ShoeDemoTile: React.FC<ShoeDemoProps> = ({ size = '2x2', accent = 'seconda
         </div>
       </Tile>
 
+      <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
+        <motion.div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-md"
             onClick={() => setIsOpen(false)}
           />
 
-          <div
-            ref={modalRef}
+          <motion.div
             className="relative w-full max-w-5xl h-[85vh] bg-background border border-foreground/10 rounded-2xl overflow-hidden flex flex-col shadow-2xl backdrop-blur-xl"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 10 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-foreground/5 bg-foreground/5">
@@ -628,9 +618,10 @@ const ShoeDemoTile: React.FC<ShoeDemoProps> = ({ size = '2x2', accent = 'seconda
                 </p>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </>
   );
 };

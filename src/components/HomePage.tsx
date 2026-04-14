@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useEffect, useRef, memo, useMemo } from "react";
+import React, { useState, memo, useMemo } from "react";
+import { motion } from 'framer-motion';
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Background from "@/components/Background";
 import Tile from "@/components/Tile";
@@ -40,7 +41,6 @@ const QUOTES = [
 ];
 
 const HomePage = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [mounted] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [randomQuote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
@@ -101,30 +101,6 @@ const HomePage = () => {
     }));
   }, []);
 
-  useEffect(() => {
-    if (!mounted || !containerRef.current) return;
-
-    let active = true;
-    const run = async () => {
-      const gsap = (await import('gsap')).default;
-      if (!active) return;
-
-      gsap.from(".dashboard-header", {
-        y: -20,
-        opacity: 0,
-        duration: 1,
-        ease: "power3.out",
-        force3D: true,
-      });
-    };
-
-    void run();
-
-    return () => {
-      active = false;
-    };
-  }, [mounted]);
-
   if (!mounted) return (
     <div className="min-h-screen w-full bg-[#F2EBE3] dark:bg-[#1A1410] flex items-center justify-center">
       <div className="text-foreground opacity-20 text-sm tracking-widest uppercase font-bold text-center">
@@ -136,15 +112,20 @@ const HomePage = () => {
   return (
     <ThemeProvider>
       <Background />
-      <div ref={containerRef} className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto font-sans flex items-center justify-center">
+      <div className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto font-sans flex items-center justify-center">
         <ProfileButton />
         <div className="absolute inset-0 bg-white/5 dark:bg-black/10 z-10 backdrop-blur-[1px] pointer-events-none" />
 
         <div className="relative z-20 w-full flex flex-col items-center justify-center py-12 min-h-screen">
           <div className="w-fit max-w-full px-6 md:px-12 lg:px-16">
-            <header className="mb-8 text-left dashboard-header">
+            <motion.header
+              className="mb-8 text-left dashboard-header"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 1, ease: 'easeOut' }}
+            >
               <h1 className="text-5xl md:text-6xl font-light tracking-tight text-foreground drop-shadow-sm">site(.)moss</h1>
-            </header>
+            </motion.header>
 
             <main className="dashboard-main w-fit max-w-full gap-x-8 gap-y-10 no-scrollbar pb-8">
               {dashboardConfig.map((group) => (

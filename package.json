@@ -24,7 +24,7 @@
     "dotenv": "^16.6.1",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.6",
-    "gsap": "^3.13.0",
+    "framer-motion": "^12.10.5",
     "lucide-react": "^0.510.0",
     "react": "^19.1.0",
     "react-calendar": "^5.1.0",

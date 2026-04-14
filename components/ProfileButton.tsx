@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { User, LogIn, LogOut, Settings, Shield, Sun, Moon } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
@@ -20,8 +21,6 @@ const ProfileButton: React.FC = () => {
   const [loading, setLoading] = useState(false);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
 
   // Check for existing session on mount
   useEffect(() => {
@@ -54,67 +53,6 @@ const ProfileButton: React.FC = () => {
     }
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
-
-  // Animation for dropdown
-  useEffect(() => {
-    let active = true;
-
-    const run = async () => {
-      const gsap = (await import('gsap')).default;
-      if (!active || !isOpen || !menuRef.current) return;
-
-      gsap.fromTo(
-        menuRef.current,
-        {
-          opacity: 0,
-          y: -10,
-          scaleX: 0.92,
-          scaleY: 0.75,
-          borderRadius: '10px',
-          filter: 'blur(4px)',
-          transformOrigin: 'top right'
-        },
-        {
-          opacity: 1,
-          y: 0,
-          scaleX: 1,
-          scaleY: 1,
-          borderRadius: '6px',
-          filter: 'blur(0px)',
-          duration: 0.32,
-          ease: 'power3.out'
-        }
-      );
-    };
-
-    void run();
-
-    return () => {
-      active = false;
-    };
-  }, [isOpen]);
-
-  // Animation for modal
-  useEffect(() => {
-    let active = true;
-
-    const run = async () => {
-      const gsap = (await import('gsap')).default;
-      if (!active || !showLogin || !modalRef.current) return;
-
-      gsap.fromTo(
-        modalRef.current,
-        { opacity: 0, scale: 0.9, y: 20 },
-        { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: 'power2.out' }
-      );
-    };
-
-    void run();
-
-    return () => {
-      active = false;
-    };
-  }, [showLogin]);
 
   const handleLogin = async (email: string, password: string) => {
     setLoading(true);
@@ -169,12 +107,17 @@ const ProfileButton: React.FC = () => {
           </div>
         </button>
 
-        {/* Dropdown Menu */}
-        {isOpen && (
-          <div
-            ref={menuRef}
-            className="absolute right-0 mt-2 w-56 bg-background/85 border border-foreground/15 rounded-[6px] shadow-2xl overflow-hidden backdrop-blur-xl z-[60]"
-          >
+        <AnimatePresence>
+          {/* Dropdown Menu */}
+          {isOpen && (
+            <motion.div
+              className="absolute right-0 mt-2 w-56 bg-background/85 border border-foreground/15 rounded-[6px] shadow-2xl overflow-hidden backdrop-blur-xl z-[60]"
+              initial={{ opacity: 0, y: -10, scaleX: 0.92, scaleY: 0.75, borderRadius: '10px', filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, scaleX: 1, scaleY: 1, borderRadius: '6px', filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -6, scaleX: 0.96, scaleY: 0.9, filter: 'blur(2px)' }}
+              transition={{ duration: 0.32, ease: 'easeOut' }}
+              style={{ transformOrigin: 'top right' }}
+            >
             {user ? (
               <>
                 <div className="p-4 border-b border-foreground/5 bg-foreground/5">
@@ -245,21 +188,32 @@ const ProfileButton: React.FC = () => {
                 </button>
               </div>
             )}
-          </div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* Login Modal */}
-      {showLogin && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+      <AnimatePresence>
+        {/* Login Modal */}
+        {showLogin && (
+        <motion.div
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-md"
             onClick={() => setShowLogin(false)}
           />
           
-          <div
-            ref={modalRef}
+          <motion.div
             className="relative w-full max-w-md bg-background border border-foreground/10 rounded-2xl shadow-2xl overflow-hidden"
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 10 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
           >
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
@@ -332,9 +286,10 @@ const ProfileButton: React.FC = () => {
                 Only admins can login
               </p>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </>
   );
 };

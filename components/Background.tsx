@@ -1,95 +1,48 @@
 "use client";
-import React, { useEffect, useRef, memo } from 'react';
+import React, { memo, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { useTheme } from './ThemeProvider';
 
 const Background: React.FC = () => {
   const { theme, bgType, bgValue, glassBlur } = useTheme();
-  const bgRef = useRef<HTMLDivElement>(null);
-  const layerRef = useRef<HTMLDivElement>(null);
+  const backgroundStyle = useMemo(() => {
+    const fallbackColor = theme === 'dark' ? '#1A1410' : '#F2EBE3';
+    if (bgType === 'image' && bgValue) {
+      return {
+        backgroundColor: fallbackColor,
+        backgroundImage: `url(${bgValue})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      };
+    }
 
-  // Separate effect for background color/image logic to prevent flashes
-  useEffect(() => {
-    let active = true;
-    let cleanup: (() => void) | undefined;
-
-    const run = async () => {
-      const gsap = (await import('gsap')).default;
-      if (!active || !bgRef.current) return;
-
-      const ctx = gsap.context(() => {
-        if (!bgRef.current) return;
-
-        if (bgType === 'color') {
-          const targetColor = bgValue || (theme === 'dark' ? '#1A1410' : '#F2EBE3');
-          gsap.to(bgRef.current, {
-            backgroundColor: targetColor,
-            backgroundImage: 'none',
-            duration: 1.2,
-            ease: 'power3.out',
-            overwrite: 'auto',
-            force3D: true,
-          });
-        } else if (bgType === 'image' && bgValue) {
-          gsap.to(bgRef.current, {
-            backgroundImage: `url(${bgValue})`,
-            backgroundColor: theme === 'dark' ? '#1A1410' : '#F2EBE3',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            duration: 1,
-            ease: 'power2.inOut',
-            overwrite: 'auto',
-            force3D: true,
-          });
-        }
-      });
-
-      cleanup = () => ctx.kill();
-    };
-
-    void run();
-
-    return () => {
-      active = false;
-      cleanup?.();
+    return {
+      backgroundColor: bgValue || fallbackColor,
+      backgroundImage: 'none',
+      backgroundSize: 'auto',
+      backgroundPosition: 'center',
     };
   }, [theme, bgType, bgValue]);
-
-  // Separate effect for blur to prevent background reloading
-  useEffect(() => {
-    let active = true;
-
-    const run = async () => {
-      const gsap = (await import('gsap')).default;
-      if (!active || !layerRef.current) return;
-
-      gsap.to(layerRef.current, {
-        backdropFilter: `blur(${glassBlur}px)`,
-        webkitBackdropFilter: `blur(${glassBlur}px)`,
-        duration: 0.5,
-        ease: 'power2.out'
-      });
-    };
-
-    void run();
-
-    return () => {
-      active = false;
-    };
-  }, [glassBlur]);
 
   return (
     <div className="fixed inset-0 z-0 overflow-hidden select-none pointer-events-none">
       {/* Actual Background Content */}
-      <div 
-        ref={bgRef} 
+      <motion.div
         className="absolute inset-0 will-change-[background-color,background-image] transform-gpu" 
-        style={{ backgroundColor: theme === 'dark' ? '#1A1410' : '#F2EBE3' }}
+        animate={backgroundStyle}
+        initial={false}
+        transition={{ duration: bgType === 'image' ? 1 : 1.2, ease: 'easeOut' }}
       />
       
       {/* Liquid Glass / Blur Layer */}
-      <div 
-        ref={layerRef}
+      <motion.div
         className="absolute inset-0 z-10"
+        animate={{
+          backdropFilter: `blur(${glassBlur}px)`,
+          WebkitBackdropFilter: `blur(${glassBlur}px)`,
+        }}
+        initial={false}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
       />
 
       {/* Subtle Noise Texture - Inline SVG for performance */}
