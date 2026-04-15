@@ -25,10 +25,10 @@
 		</div>
 
 		<div class="settings-shell__group">
-			<p class="settings-shell__label">Blog UI</p>
+			<p class="settings-shell__label">Site UI</p>
 			<div class="settings-shell__row settings-shell__row--single">
-				<button type="button" data-blog-mode="apple">Apple page (default)</button>
-				<button type="button" data-blog-mode="modal">Modal legacy</button>
+				<button type="button" data-site-mode="apple">Apple UI (default)</button>
+				<button type="button" data-site-mode="legacy">Classic UI</button>
 			</div>
 		</div>
 	</div>
@@ -37,30 +37,31 @@
 <script>
 	const root = document.documentElement;
 	const modal = document.querySelector('[data-settings-modal]');
-	const BLOG_UI_MODE_KEY = 'blog-ui-mode';
-	const BLOG_UI_MODE_EVENT = 'blog-ui-mode-change';
+	const SITE_UI_MODE_KEY = 'site-ui-mode';
+	const SITE_UI_MODE_EVENT = 'site-ui-mode-change';
 
-	const updateBlogModeButtonState = (mode) => {
-		const blogModeButtons = document.querySelectorAll('[data-blog-mode]');
-		blogModeButtons.forEach((button) => {
-			const isActive = button.getAttribute('data-blog-mode') === mode;
+	const updateSiteModeButtonState = (mode) => {
+		const siteModeButtons = document.querySelectorAll('[data-site-mode]');
+		siteModeButtons.forEach((button) => {
+			const isActive = button.getAttribute('data-site-mode') === mode;
 			button.setAttribute('aria-pressed', String(isActive));
 			button.classList.toggle('is-active', isActive);
 		});
 	};
 
-	const getInitialBlogMode = () => {
+	const getInitialSiteMode = () => {
 		if (typeof localStorage === 'undefined') return 'apple';
-		const savedMode = localStorage.getItem(BLOG_UI_MODE_KEY);
-		return savedMode === 'modal' ? 'modal' : 'apple';
+		const savedMode = localStorage.getItem(SITE_UI_MODE_KEY);
+		return savedMode === 'legacy' ? 'legacy' : 'apple';
 	};
 
-	const initialBlogMode = getInitialBlogMode();
-	updateBlogModeButtonState(initialBlogMode);
+	const initialSiteMode = getInitialSiteMode();
+	root.setAttribute('data-ui-mode', initialSiteMode);
+	updateSiteModeButtonState(initialSiteMode);
 	if (typeof localStorage !== 'undefined') {
-		localStorage.setItem(BLOG_UI_MODE_KEY, initialBlogMode);
+		localStorage.setItem(SITE_UI_MODE_KEY, initialSiteMode);
 	}
-	window.dispatchEvent(new CustomEvent(BLOG_UI_MODE_EVENT, { detail: { mode: initialBlogMode } }));
+	window.dispatchEvent(new CustomEvent(SITE_UI_MODE_EVENT, { detail: { mode: initialSiteMode } }));
 
 	if (modal) {
 		const openButtons = document.querySelectorAll('[data-open-settings]');
@@ -68,7 +69,7 @@
 		const themeButtons = modal.querySelectorAll('[data-theme-mode]');
 		const glassRange = modal.querySelector('[data-glass-range]');
 		const grayscaleButton = modal.querySelector('[data-toggle-grayscale]');
-		const blogModeButtons = modal.querySelectorAll('[data-blog-mode]');
+		const siteModeButtons = modal.querySelectorAll('[data-site-mode]');
 
 		const open = () => {
 			modal.hidden = false;
@@ -95,13 +96,14 @@
 			root.classList.toggle('force-grayscale');
 			localStorage.setItem('grayscale', String(root.classList.contains('force-grayscale')));
 		});
-		blogModeButtons.forEach((button) => {
+		siteModeButtons.forEach((button) => {
 			button.addEventListener('click', () => {
-				const mode = button.getAttribute('data-blog-mode');
+				const mode = button.getAttribute('data-site-mode');
 				if (!mode) return;
-				localStorage.setItem(BLOG_UI_MODE_KEY, mode);
-				updateBlogModeButtonState(mode);
-				window.dispatchEvent(new CustomEvent(BLOG_UI_MODE_EVENT, { detail: { mode } }));
+				localStorage.setItem(SITE_UI_MODE_KEY, mode);
+				root.setAttribute('data-ui-mode', mode);
+				updateSiteModeButtonState(mode);
+				window.dispatchEvent(new CustomEvent(SITE_UI_MODE_EVENT, { detail: { mode } }));
 			});
 		});
 		document.addEventListener('keydown', (event) => {
@@ -180,7 +182,7 @@
 		opacity: 0.65;
 	}
 
-	[data-blog-mode].is-active {
+	[data-site-mode].is-active {
 		background: color-mix(in srgb, var(--accent-primary) 24%, transparent);
 		border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
 		color: color-mix(in srgb, var(--accent-primary) 80%, var(--foreground));

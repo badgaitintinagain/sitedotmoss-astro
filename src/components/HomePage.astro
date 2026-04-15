@@ -66,7 +66,41 @@ const sizeClassMap = {
 
 <Background />
 
-<div class="home-shell">
+<section class="home-apple" data-ui-shell="apple">
+	<ProfileButton />
+	<div class="home-apple__glow home-apple__glow--one"></div>
+	<div class="home-apple__glow home-apple__glow--two"></div>
+
+	<div class="home-apple__inner">
+		<header class="home-apple__hero">
+			<p>site(.)moss</p>
+			<h1>Build stories that sell before the first scroll.</h1>
+			<p class="home-apple__lead">Apple UI mode is now the default across pages so visitors land on dedicated routes, better for SEO, ad delivery, and retention.</p>
+		</header>
+
+		<div class="home-apple__grid">
+			<a href="/blog" class="home-apple__card home-apple__card--feature">
+				<span>Editorial Hub</span>
+				<h2>Open the Blog experience</h2>
+				<p>Featured layouts, endpoint navigation, and ad-friendly reading flow.</p>
+			</a>
+
+			<a href="/blog" class="home-apple__card home-apple__card--media" style={`background-image: linear-gradient(120deg, rgba(6, 7, 10, 0.25), rgba(6, 7, 10, 0.62)), url(${randomQuote.image});`}>
+				<span>Spotlight</span>
+				<h2>&quot;{randomQuote.text}&quot;</h2>
+				<p>{randomQuote.author}</p>
+			</a>
+
+			<button type="button" class="home-apple__card home-apple__card--settings" data-open-settings>
+				<span>Preferences</span>
+				<h2>Switch UI version</h2>
+				<p>Settings stays modal in both versions as requested.</p>
+			</button>
+		</div>
+	</div>
+</section>
+
+<div class="home-shell home-shell--legacy" data-ui-shell="legacy">
 	<ProfileButton />
 	<div class="home-shell__veil"></div>
 
@@ -157,6 +191,153 @@ const sizeClassMap = {
 <SettingsModal />
 
 <style>
+	[data-ui-shell='apple'] {
+		display: block;
+	}
+
+	[data-ui-shell='legacy'] {
+		display: none;
+	}
+
+	html[data-ui-mode='legacy'] [data-ui-shell='apple'] {
+		display: none;
+	}
+
+	html[data-ui-mode='legacy'] [data-ui-shell='legacy'] {
+		display: block;
+	}
+
+	.home-apple {
+		position: relative;
+		min-height: 100vh;
+		overflow: hidden;
+		padding: clamp(5rem, 9vw, 7rem) 1.25rem 3rem;
+	}
+
+	.home-apple__inner {
+		position: relative;
+		z-index: 2;
+		max-width: 1080px;
+		margin: 0 auto;
+	}
+
+	.home-apple__hero p {
+		margin: 0;
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.24em;
+		text-transform: uppercase;
+		opacity: 0.55;
+	}
+
+	.home-apple__hero h1 {
+		margin: 1rem 0 0;
+		max-width: 18ch;
+		font-size: clamp(2.25rem, 6vw, 4.5rem);
+		line-height: 0.95;
+		letter-spacing: -0.045em;
+		font-weight: 600;
+	}
+
+	.home-apple__lead {
+		margin-top: 1.25rem;
+		max-width: 62ch;
+		font-size: clamp(0.95rem, 2vw, 1.1rem);
+		line-height: 1.7;
+		opacity: 0.72;
+	}
+
+	.home-apple__grid {
+		margin-top: clamp(1.75rem, 4vw, 3rem);
+		display: grid;
+		grid-template-columns: repeat(12, minmax(0, 1fr));
+		gap: 0.75rem;
+	}
+
+	.home-apple__card {
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		text-decoration: none;
+		text-align: left;
+		border: 1px solid color-mix(in srgb, var(--foreground) 14%, transparent);
+		border-radius: 2rem;
+		background: color-mix(in srgb, var(--background) 88%, transparent);
+		min-height: 14rem;
+		padding: 1.6rem;
+		backdrop-filter: blur(14px);
+		box-shadow: 0 28px 50px -46px rgba(0, 0, 0, 0.66);
+		transition: transform 280ms ease, border-color 220ms ease;
+		cursor: pointer;
+		color: inherit;
+	}
+
+	.home-apple__card:hover {
+		transform: translateY(-4px);
+		border-color: color-mix(in srgb, var(--foreground) 28%, transparent);
+	}
+
+	.home-apple__card span {
+		font-size: 0.62rem;
+		text-transform: uppercase;
+		letter-spacing: 0.24em;
+		font-weight: 700;
+		opacity: 0.55;
+	}
+
+	.home-apple__card h2 {
+		margin: 0.8rem 0 0;
+		font-size: clamp(1.35rem, 2.5vw, 2.2rem);
+		line-height: 1.05;
+		letter-spacing: -0.03em;
+	}
+
+	.home-apple__card p {
+		margin: 0.9rem 0 0;
+		font-size: 0.92rem;
+		line-height: 1.6;
+		opacity: 0.72;
+	}
+
+	.home-apple__card--feature {
+		grid-column: span 7;
+	}
+
+	.home-apple__card--media {
+		grid-column: span 5;
+		background-size: cover;
+		background-position: center;
+		color: #fff;
+	}
+
+	.home-apple__card--settings {
+		grid-column: span 12;
+	}
+
+	.home-apple__glow {
+		position: absolute;
+		border-radius: 999px;
+		pointer-events: none;
+		filter: blur(80px);
+		opacity: 0.35;
+	}
+
+	.home-apple__glow--one {
+		height: 18rem;
+		width: 18rem;
+		right: -3rem;
+		top: 3rem;
+		background: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+	}
+
+	.home-apple__glow--two {
+		height: 16rem;
+		width: 16rem;
+		left: -5rem;
+		bottom: 2rem;
+		background: color-mix(in srgb, var(--accent-secondary) 58%, transparent);
+	}
+
 	.home-shell {
 		position: relative;
 		min-height: 100vh;
@@ -291,6 +472,20 @@ const sizeClassMap = {
 	}
 
 	@media (max-width: 768px) {
+		.home-apple {
+			padding-top: 4.75rem;
+		}
+
+		.home-apple__grid {
+			grid-template-columns: 1fr;
+		}
+
+		.home-apple__card--feature,
+		.home-apple__card--media,
+		.home-apple__card--settings {
+			grid-column: span 1;
+		}
+
 		.home-shell__content {
 			padding: 2rem 0 4rem;
 		}

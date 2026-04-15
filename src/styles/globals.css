@@ -59,6 +59,18 @@ body {
   overflow-x: hidden;
 }
 
+html[data-ui-mode='apple'] body {
+  background:
+    radial-gradient(1400px 560px at 50% -180px, color-mix(in srgb, var(--accent-primary) 22%, transparent), transparent 62%),
+    linear-gradient(180deg, color-mix(in srgb, var(--background) 97%, white 3%), color-mix(in srgb, var(--background) 94%, transparent));
+}
+
+html.dark[data-ui-mode='apple'] body {
+  background:
+    radial-gradient(1400px 560px at 50% -180px, color-mix(in srgb, var(--accent-primary) 28%, transparent), transparent 62%),
+    linear-gradient(180deg, color-mix(in srgb, var(--background) 88%, black 12%), color-mix(in srgb, var(--background) 94%, transparent));
+}
+
 html,
 body {
   margin: 0;

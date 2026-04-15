@@ -21,8 +21,8 @@ interface BlogPost {
 }
 
 export default function BlogListPage() {
-  const BLOG_UI_MODE_KEY = 'blog-ui-mode';
-  const BLOG_UI_MODE_EVENT = 'blog-ui-mode-change';
+  const SITE_UI_MODE_KEY = 'site-ui-mode';
+  const SITE_UI_MODE_EVENT = 'site-ui-mode-change';
   const router = useRouter();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,13 +30,14 @@ export default function BlogListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [uiMode, setUiMode] = useState<'apple' | 'modal'>('apple');
+  const [uiMode, setUiMode] = useState<'apple' | 'legacy'>('apple');
 
-  const setMode = (mode: 'apple' | 'modal') => {
+  const setMode = (mode: 'apple' | 'legacy') => {
     setUiMode(mode);
     if (typeof window !== 'undefined') {
-      localStorage.setItem(BLOG_UI_MODE_KEY, mode);
-      window.dispatchEvent(new CustomEvent(BLOG_UI_MODE_EVENT, { detail: { mode } }));
+      localStorage.setItem(SITE_UI_MODE_KEY, mode);
+      document.documentElement.setAttribute('data-ui-mode', mode);
+      window.dispatchEvent(new CustomEvent(SITE_UI_MODE_EVENT, { detail: { mode } }));
     }
   };
 
@@ -49,18 +50,19 @@ export default function BlogListPage() {
       return;
     }
 
-    const initialMode = localStorage.getItem(BLOG_UI_MODE_KEY) === 'modal' ? 'modal' : 'apple';
+    const initialMode = localStorage.getItem(SITE_UI_MODE_KEY) === 'legacy' ? 'legacy' : 'apple';
     setUiMode(initialMode);
-    localStorage.setItem(BLOG_UI_MODE_KEY, initialMode);
+    localStorage.setItem(SITE_UI_MODE_KEY, initialMode);
+    document.documentElement.setAttribute('data-ui-mode', initialMode);
 
-    const onBlogModeChange = (event: Event) => {
+    const onSiteModeChange = (event: Event) => {
       const nextMode = (event as CustomEvent<{ mode?: string }>).detail?.mode;
-      setUiMode(nextMode === 'modal' ? 'modal' : 'apple');
+      setUiMode(nextMode === 'legacy' ? 'legacy' : 'apple');
     };
 
-    window.addEventListener(BLOG_UI_MODE_EVENT, onBlogModeChange as EventListener);
+    window.addEventListener(SITE_UI_MODE_EVENT, onSiteModeChange as EventListener);
     return () => {
-      window.removeEventListener(BLOG_UI_MODE_EVENT, onBlogModeChange as EventListener);
+      window.removeEventListener(SITE_UI_MODE_EVENT, onSiteModeChange as EventListener);
     };
   }, []);
 
@@ -113,7 +115,7 @@ export default function BlogListPage() {
   const spotlightPosts = filteredPosts.slice(1, 4);
 
   const handlePostOpen = (slug: string) => {
-    if (uiMode === 'modal') {
+    if (uiMode === 'legacy') {
       setSelectedSlug(slug);
       return;
     }
@@ -141,10 +143,10 @@ export default function BlogListPage() {
                 Apple UI
               </button>
               <button
-                onClick={() => setMode('modal')}
-                className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold transition-colors ${uiMode === 'modal' ? 'bg-foreground text-background' : 'text-foreground/50 hover:text-foreground/80 bg-foreground/5'}`}
+                onClick={() => setMode('legacy')}
+                className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold transition-colors ${uiMode === 'legacy' ? 'bg-foreground text-background' : 'text-foreground/50 hover:text-foreground/80 bg-foreground/5'}`}
               >
-                Modal UI
+                Classic UI
               </button>
               <button
                 onClick={() => setViewMode('grid')}
@@ -485,7 +487,7 @@ export default function BlogListPage() {
       </main>
 
       {/* Blog Modal */}
-      {uiMode === 'modal' && selectedSlug && (
+      {uiMode === 'legacy' && selectedSlug && (
         <BlogModal
           slug={selectedSlug}
           isOpen={!!selectedSlug}

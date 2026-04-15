@@ -15,6 +15,16 @@ import '../styles/globals.css';
 		<script is:inline>
 			const root = document.documentElement;
 			try {
+				const siteModeKey = 'site-ui-mode';
+				const legacyBlogMode = localStorage.getItem('blog-ui-mode');
+				const savedMode = localStorage.getItem(siteModeKey);
+				const resolvedMode = savedMode === 'legacy' || savedMode === 'apple'
+					? savedMode
+					: legacyBlogMode === 'modal'
+						? 'legacy'
+						: 'apple';
+				root.setAttribute('data-ui-mode', resolvedMode);
+				localStorage.setItem(siteModeKey, resolvedMode);
 				const theme = localStorage.getItem('theme');
 				if (theme === 'dark') root.classList.add('dark');
 				const glassBlur = localStorage.getItem('glassBlur');
