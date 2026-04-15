@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { FileText, ArrowLeft, Heart, MessageCircle, Layers, Search, Grid, List, X, Tag } from 'lucide-react';
+import { FileText, ArrowLeft, Heart, MessageCircle, Layers, Search, Grid, List, X, Tag, Sparkles } from 'lucide-react';
 import BlogModal from '@/components/BlogModal';
 
 interface BlogPost {
@@ -21,6 +21,8 @@ interface BlogPost {
 }
 
 export default function BlogListPage() {
+  const BLOG_UI_MODE_KEY = 'blog-ui-mode';
+  const BLOG_UI_MODE_EVENT = 'blog-ui-mode-change';
   const router = useRouter();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,10 +30,45 @@ export default function BlogListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [uiMode, setUiMode] = useState<'apple' | 'modal'>('apple');
+
+  const setMode = (mode: 'apple' | 'modal') => {
+    setUiMode(mode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(BLOG_UI_MODE_KEY, mode);
+      window.dispatchEvent(new CustomEvent(BLOG_UI_MODE_EVENT, { detail: { mode } }));
+    }
+  };
 
   useEffect(() => {
     fetchPosts();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const initialMode = localStorage.getItem(BLOG_UI_MODE_KEY) === 'modal' ? 'modal' : 'apple';
+    setUiMode(initialMode);
+    localStorage.setItem(BLOG_UI_MODE_KEY, initialMode);
+
+    const onBlogModeChange = (event: Event) => {
+      const nextMode = (event as CustomEvent<{ mode?: string }>).detail?.mode;
+      setUiMode(nextMode === 'modal' ? 'modal' : 'apple');
+    };
+
+    window.addEventListener(BLOG_UI_MODE_EVENT, onBlogModeChange as EventListener);
+    return () => {
+      window.removeEventListener(BLOG_UI_MODE_EVENT, onBlogModeChange as EventListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (uiMode === 'apple' && selectedSlug) {
+      setSelectedSlug(null);
+    }
+  }, [uiMode, selectedSlug]);
 
   const fetchPosts = async () => {
     try {
@@ -72,10 +109,20 @@ export default function BlogListPage() {
   }, [posts, searchQuery, selectedTag]);
 
   const hasFilters = searchQuery || selectedTag;
+  const featuredPost = filteredPosts[0];
+  const spotlightPosts = filteredPosts.slice(1, 4);
+
+  const handlePostOpen = (slug: string) => {
+    if (uiMode === 'modal') {
+      setSelectedSlug(slug);
+      return;
+    }
+    router.push(`/blog/${slug}`);
+  };
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-40 border-b border-foreground/10 bg-background/80 backdrop-blur-xl">
+    <div className="min-h-screen bg-[radial-gradient(1200px_540px_at_50%_-120px,rgba(95,108,145,0.18),transparent_62%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,246,248,0.96))] dark:bg-[radial-gradient(1200px_540px_at_50%_-120px,rgba(127,146,196,0.2),transparent_62%),linear-gradient(180deg,rgba(10,11,14,0.98),rgba(10,11,14,0.94))]">
+      <header className="sticky top-0 z-40 border-b border-foreground/10 bg-background/70 backdrop-blur-2xl">
         <div className="max-w-[935px] mx-auto px-3 md:px-4">
           {/* Top row */}
           <div className="flex items-center justify-between py-3">
@@ -88,14 +135,26 @@ export default function BlogListPage() {
             <h1 className="text-base font-medium text-foreground">Blog</h1>
             <div className="flex items-center gap-1">
               <button
+                onClick={() => setMode('apple')}
+                className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold transition-colors ${uiMode === 'apple' ? 'bg-foreground text-background' : 'text-foreground/50 hover:text-foreground/80 bg-foreground/5'}`}
+              >
+                Apple UI
+              </button>
+              <button
+                onClick={() => setMode('modal')}
+                className={`px-2.5 py-1.5 rounded-full text-[11px] font-semibold transition-colors ${uiMode === 'modal' ? 'bg-foreground text-background' : 'text-foreground/50 hover:text-foreground/80 bg-foreground/5'}`}
+              >
+                Modal UI
+              </button>
+              <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'text-accent-primary bg-accent-primary/10' : 'text-foreground/40 hover:text-foreground/70'}`}
+                className={`p-1.5 rounded-md transition-colors ${viewMode === 'grid' ? 'text-accent-primary bg-accent-primary/10' : 'text-foreground/40 hover:text-foreground/70'} ${uiMode === 'apple' ? 'opacity-40 pointer-events-none' : ''}`}
               >
                 <Grid size={16} />
               </button>
               <button
                 onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'text-accent-primary bg-accent-primary/10' : 'text-foreground/40 hover:text-foreground/70'}`}
+                className={`p-1.5 rounded-md transition-colors ${viewMode === 'list' ? 'text-accent-primary bg-accent-primary/10' : 'text-foreground/40 hover:text-foreground/70'} ${uiMode === 'apple' ? 'opacity-40 pointer-events-none' : ''}`}
               >
                 <List size={16} />
               </button>
@@ -152,7 +211,7 @@ export default function BlogListPage() {
         </div>
       </header>
 
-      <main className="max-w-[935px] mx-auto px-1 md:px-2 py-4 md:py-6">
+      <main className="max-w-[1080px] mx-auto px-3 md:px-4 py-4 md:py-8">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-sm text-foreground/60">Loading...</div>
@@ -173,6 +232,126 @@ export default function BlogListPage() {
               </button>
             )}
           </div>
+        ) : uiMode === 'apple' ? (
+          <div className="space-y-5 md:space-y-7">
+            <section className="relative overflow-hidden rounded-[2rem] border border-foreground/10 bg-foreground/[0.03] px-6 py-8 md:px-10 md:py-10 shadow-[0_24px_50px_-38px_rgba(0,0,0,0.45)]">
+              <div className="absolute -right-10 -top-12 h-44 w-44 rounded-full bg-accent-primary/20 blur-3xl" />
+              <div className="absolute -left-14 bottom-0 h-44 w-44 rounded-full bg-accent-secondary/20 blur-3xl" />
+              <p className="relative flex items-center gap-2 text-[11px] uppercase tracking-[0.26em] text-foreground/55">
+                <Sparkles size={13} />
+                Weekly Editorial
+              </p>
+              <h2 className="relative mt-3 max-w-[18ch] text-3xl leading-tight tracking-tight text-foreground md:text-5xl">
+                Stories that feel like a product keynote.
+              </h2>
+              <p className="relative mt-3 max-w-[60ch] text-sm leading-relaxed text-foreground/65 md:text-base">
+                A cleaner reading flow built for engagement and ad placement. Apple UI mode opens each post on its own page endpoint by default.
+              </p>
+            </section>
+
+            {featuredPost && (
+              <article
+                onClick={() => handlePostOpen(featuredPost.slug)}
+                className="group grid cursor-pointer overflow-hidden rounded-[2rem] border border-foreground/10 bg-background/85 shadow-[0_30px_60px_-44px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-transform duration-500 hover:-translate-y-1 md:grid-cols-[1.2fr_1fr]"
+              >
+                <div className="relative min-h-[260px] md:min-h-[360px]">
+                  {featuredPost.images?.[0] || featuredPost.coverImage ? (
+                    <Image
+                      src={featuredPost.images?.[0] || featuredPost.coverImage || ''}
+                      alt={featuredPost.title}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, 55vw"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-gradient-to-br from-accent-primary/20 via-accent-secondary/10 to-transparent" />
+                  )}
+                </div>
+                <div className="flex flex-col justify-between p-6 md:p-8">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-foreground/45">Featured</p>
+                    <h3 className="mt-3 text-2xl leading-tight tracking-tight text-foreground md:text-3xl">{featuredPost.title}</h3>
+                    <p className="mt-3 text-sm leading-relaxed text-foreground/65 md:text-base line-clamp-4">
+                      {featuredPost.excerpt || 'Tap to open the full story on a dedicated page.'}
+                    </p>
+                  </div>
+                  <div className="mt-6 flex flex-wrap items-center gap-4 text-xs text-foreground/50">
+                    <span>{new Date(featuredPost.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <span className="flex items-center gap-1"><Heart size={12} /> {featuredPost.likesCount || 0}</span>
+                    <span className="flex items-center gap-1"><MessageCircle size={12} /> {featuredPost.commentsCount || 0}</span>
+                  </div>
+                </div>
+              </article>
+            )}
+
+            <section className="grid gap-3 md:grid-cols-3 md:gap-4">
+              {spotlightPosts.map((post) => {
+                const image = post.images?.[0] || post.coverImage;
+                return (
+                  <article
+                    key={post.id}
+                    onClick={() => handlePostOpen(post.slug)}
+                    className="group cursor-pointer overflow-hidden rounded-[1.5rem] border border-foreground/10 bg-background/75 transition-all duration-300 hover:-translate-y-1 hover:border-foreground/20"
+                  >
+                    <div className="relative aspect-[4/3] overflow-hidden bg-foreground/5">
+                      {image ? (
+                        <Image
+                          src={image}
+                          alt={post.title}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                        />
+                      ) : (
+                        <div className="h-full w-full bg-gradient-to-br from-accent-primary/20 to-accent-secondary/10" />
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <h4 className="text-base font-medium leading-snug text-foreground line-clamp-2">{post.title}</h4>
+                      <p className="mt-2 text-xs leading-relaxed text-foreground/60 line-clamp-2">
+                        {post.excerpt || 'Open this article in page view.'}
+                      </p>
+                    </div>
+                  </article>
+                );
+              })}
+            </section>
+
+            <section className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+              {filteredPosts.slice(4).map((post) => {
+                const image = post.images?.[0] || post.coverImage;
+                return (
+                  <article
+                    key={post.id}
+                    onClick={() => handlePostOpen(post.slug)}
+                    className="group cursor-pointer rounded-2xl border border-foreground/10 bg-background/70 p-4 transition-colors hover:bg-foreground/[0.04]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-foreground/5">
+                        {image ? (
+                          <Image
+                            src={image}
+                            alt={post.title}
+                            fill
+                            className="object-cover"
+                            sizes="56px"
+                          />
+                        ) : (
+                          <div className="h-full w-full bg-gradient-to-br from-accent-primary/20 to-accent-secondary/10" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="text-sm font-medium text-foreground line-clamp-1">{post.title}</h5>
+                        <p className="text-[11px] text-foreground/50">
+                          {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </section>
+          </div>
         ) : viewMode === 'grid' ? (
           /* ── Grid View ── */
           <div className="grid grid-cols-3 gap-0.5 md:gap-1">
@@ -186,7 +365,7 @@ export default function BlogListPage() {
               return (
                 <article
                   key={post.id}
-                  onClick={() => setSelectedSlug(post.slug)}
+                  onClick={() => handlePostOpen(post.slug)}
                   className="group cursor-pointer bg-foreground/5 relative overflow-hidden transition-all duration-200"
                 >
                   <div className="relative aspect-square">
@@ -248,7 +427,7 @@ export default function BlogListPage() {
               return (
                 <article
                   key={post.id}
-                  onClick={() => setSelectedSlug(post.slug)}
+                  onClick={() => handlePostOpen(post.slug)}
                   className="flex items-center gap-3 md:gap-4 cursor-pointer bg-foreground/[0.03] hover:bg-foreground/[0.06] border border-foreground/8 rounded-xl p-2.5 md:p-3 transition-all"
                 >
                   {/* Thumbnail */}
@@ -306,7 +485,7 @@ export default function BlogListPage() {
       </main>
 
       {/* Blog Modal */}
-      {selectedSlug && (
+      {uiMode === 'modal' && selectedSlug && (
         <BlogModal
           slug={selectedSlug}
           isOpen={!!selectedSlug}

@@ -23,18 +23,52 @@
 			<p class="settings-shell__label">Accessibility</p>
 			<button type="button" data-toggle-grayscale>Toggle grayscale</button>
 		</div>
+
+		<div class="settings-shell__group">
+			<p class="settings-shell__label">Blog UI</p>
+			<div class="settings-shell__row settings-shell__row--single">
+				<button type="button" data-blog-mode="apple">Apple page (default)</button>
+				<button type="button" data-blog-mode="modal">Modal legacy</button>
+			</div>
+		</div>
 	</div>
 </div>
 
 <script>
 	const root = document.documentElement;
 	const modal = document.querySelector('[data-settings-modal]');
+	const BLOG_UI_MODE_KEY = 'blog-ui-mode';
+	const BLOG_UI_MODE_EVENT = 'blog-ui-mode-change';
+
+	const updateBlogModeButtonState = (mode) => {
+		const blogModeButtons = document.querySelectorAll('[data-blog-mode]');
+		blogModeButtons.forEach((button) => {
+			const isActive = button.getAttribute('data-blog-mode') === mode;
+			button.setAttribute('aria-pressed', String(isActive));
+			button.classList.toggle('is-active', isActive);
+		});
+	};
+
+	const getInitialBlogMode = () => {
+		if (typeof localStorage === 'undefined') return 'apple';
+		const savedMode = localStorage.getItem(BLOG_UI_MODE_KEY);
+		return savedMode === 'modal' ? 'modal' : 'apple';
+	};
+
+	const initialBlogMode = getInitialBlogMode();
+	updateBlogModeButtonState(initialBlogMode);
+	if (typeof localStorage !== 'undefined') {
+		localStorage.setItem(BLOG_UI_MODE_KEY, initialBlogMode);
+	}
+	window.dispatchEvent(new CustomEvent(BLOG_UI_MODE_EVENT, { detail: { mode: initialBlogMode } }));
+
 	if (modal) {
 		const openButtons = document.querySelectorAll('[data-open-settings]');
 		const closeButtons = modal.querySelectorAll('[data-settings-close]');
 		const themeButtons = modal.querySelectorAll('[data-theme-mode]');
 		const glassRange = modal.querySelector('[data-glass-range]');
 		const grayscaleButton = modal.querySelector('[data-toggle-grayscale]');
+		const blogModeButtons = modal.querySelectorAll('[data-blog-mode]');
 
 		const open = () => {
 			modal.hidden = false;
@@ -60,6 +94,15 @@
 		grayscaleButton?.addEventListener('click', () => {
 			root.classList.toggle('force-grayscale');
 			localStorage.setItem('grayscale', String(root.classList.contains('force-grayscale')));
+		});
+		blogModeButtons.forEach((button) => {
+			button.addEventListener('click', () => {
+				const mode = button.getAttribute('data-blog-mode');
+				if (!mode) return;
+				localStorage.setItem(BLOG_UI_MODE_KEY, mode);
+				updateBlogModeButtonState(mode);
+				window.dispatchEvent(new CustomEvent(BLOG_UI_MODE_EVENT, { detail: { mode } }));
+			});
 		});
 		document.addEventListener('keydown', (event) => {
 			if (event.key === 'Escape') close();
@@ -125,11 +168,22 @@
 		margin-top: 1rem;
 	}
 
+	.settings-shell__row--single {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		margin-bottom: 0;
+	}
+
 	.settings-shell__label {
 		font-size: 0.78rem;
 		text-transform: uppercase;
 		letter-spacing: 0.18em;
 		opacity: 0.65;
+	}
+
+	[data-blog-mode].is-active {
+		background: color-mix(in srgb, var(--accent-primary) 24%, transparent);
+		border-color: color-mix(in srgb, var(--accent-primary) 55%, transparent);
+		color: color-mix(in srgb, var(--accent-primary) 80%, var(--foreground));
 	}
 
 	input[type='range'] {
