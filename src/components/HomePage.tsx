@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, memo, useMemo } from "react";
+import React, { useState, memo, useMemo, useEffect } from "react";
 import { motion } from 'framer-motion';
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Background from "@/components/Background";
@@ -16,7 +16,7 @@ import ResourceTile from "@/components/ResourceTile";
 import PhotosTile from "@/components/PhotosTile";
 import SettingsModal from "@/components/SettingsModal";
 import ProfileButton from "@/components/ProfileButton";
-import { Settings, Users, PenTool } from "lucide-react";
+import { Settings, Users, PenTool, Newspaper, LayoutGrid, ArrowRight, Shield } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface DashboardTile {
@@ -41,10 +41,41 @@ const QUOTES = [
   { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt", image: "https://images.unsplash.com/photo-1485872232694-217b2ad2303e?auto=format&fit=crop&w=320&q=55" }
 ];
 
+type UiMode = 'apple' | 'legacy';
+const SITE_UI_MODE_EVENT = 'site-ui-mode-change';
+const SITE_UI_MODE_KEY = 'site-ui-mode';
+
 const HomePage = () => {
   const [mounted] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [uiMode, setUiMode] = useState<UiMode>('apple');
   const [randomQuote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+
+  const applyUiMode = (mode: UiMode) => {
+    setUiMode(mode);
+    localStorage.setItem(SITE_UI_MODE_KEY, mode);
+    document.documentElement.setAttribute('data-ui-mode', mode);
+    window.dispatchEvent(new CustomEvent(SITE_UI_MODE_EVENT, { detail: { mode } }));
+  };
+
+  // Initialize UI mode from localStorage
+  useEffect(() => {
+    const mode = localStorage.getItem(SITE_UI_MODE_KEY) as UiMode | null;
+    const resolvedMode = mode === 'legacy' ? 'legacy' : 'apple';
+    setUiMode(resolvedMode);
+    document.documentElement.setAttribute('data-ui-mode', resolvedMode);
+
+    // Listen for mode changes from other sources (Settings modal header buttons)
+    const handleModeChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ mode: UiMode }>;
+      const nextMode = customEvent.detail?.mode;
+      if (!nextMode) return;
+      setUiMode(nextMode);
+      document.documentElement.setAttribute('data-ui-mode', nextMode);
+    };
+    window.addEventListener(SITE_UI_MODE_EVENT, handleModeChange);
+    return () => window.removeEventListener(SITE_UI_MODE_EVENT, handleModeChange);
+  }, []);
 
   const dashboardConfig = useMemo<DashboardGroup[]>(() => {
     const baseGroups: DashboardGroup[] = [
@@ -80,11 +111,11 @@ const HomePage = () => {
       }
     ];
 
-    return baseGroups.map(group => ({
+    return baseGroups.map((group, groupIndex) => ({
       ...group,
-      tiles: group.tiles.map(tile => {
-        const accent = tile.accent || (Math.random() > 0.5 ? 'primary' : 'secondary');
-        const opacity = tile.opacity || Math.floor(Math.random() * 31) + 45;
+      tiles: group.tiles.map((tile, tileIndex) => {
+        const accent = tile.accent || (groupIndex % 2 === 0 ? 'primary' : 'secondary');
+        const opacity = tile.opacity || 44 + ((tileIndex + groupIndex) % 4) * 7;
 
         return {
           ...tile,
@@ -113,74 +144,173 @@ const HomePage = () => {
   return (
     <ThemeProvider>
       <Background />
-      <div className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto font-sans flex items-center justify-center">
-        <ProfileButton />
-        <div className="absolute inset-0 bg-white/5 dark:bg-black/10 z-10 backdrop-blur-[1px] pointer-events-none" />
-
-        <div className="relative z-20 w-full flex flex-col items-center justify-center py-12 min-h-screen">
-          <div className="w-fit max-w-full px-6 md:px-12 lg:px-16">
-            <motion.header
-              className="mb-8 text-left dashboard-header"
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 1, ease: 'easeOut' }}
-            >
-              <h1 className="text-5xl md:text-6xl font-light tracking-tight text-foreground drop-shadow-sm">site(.)moss</h1>
-            </motion.header>
-
-            <main className="dashboard-main w-fit max-w-full gap-x-8 gap-y-10 no-scrollbar pb-8">
-              {dashboardConfig.map((group) => (
-                <div key={group.title} className="flex flex-col gap-3 w-fit items-start flex-shrink-0">
-                  <h2 className="text-[10px] font-bold uppercase tracking-widest opacity-60 ml-1 text-foreground">
-                    {group.title}
-                  </h2>
-                  <div className="grid grid-flow-row-dense grid-cols-6 auto-rows-[4rem] gap-1.5 w-max place-content-start">
-                    {group.tiles.map((tile) => {
-                      if (tile.component) {
-                        const Component = tile.component;
-                        return <Component key={tile.id} {...tile.props} />;
-                      }
-
-                      if (tile.id === 'quote') {
-                        return (
-                          <Tile key={tile.id} size={tile.size} bgImage={randomQuote.image} bgClass="bg-black/40 border-white/20" className="text-white">
-                            <div className="flex flex-col items-center justify-center w-full h-full px-6 text-center">
-                              <p className="text-xs italic font-medium leading-tight mb-2">&quot;{randomQuote.text}&quot;</p>
-                              <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">- {randomQuote.author}</p>
-                            </div>
-                          </Tile>
-                        );
-                      }
-
-                      const extraProps = tile.id === 'settings' ? { onClick: () => setIsSettingsOpen(true) } : {};
-
-                      return (
-                        <Tile
-                          key={tile.id}
-                          size={tile.size}
-                          label={tile.label}
-                          icon={tile.icon}
-                          accentType={tile.accent}
-                          opacity={tile.opacity}
-                          {...extraProps}
-                        >
-                          {tile.id === 'project' && (
-                            <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center">
-                              <div className="w-10 h-10 rounded-full border-2 border-tile-text/30 flex items-center justify-center mb-1">
-                                <span className="text-xs font-bold text-tile-text">75%</span>
-                              </div>
-                              <p className="text-[8px] font-bold uppercase tracking-tighter text-tile-text">In Progress</p>
-                            </div>
-                          )}
-                        </Tile>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </main>
+      <div className="home-shell-wrapper">
+        {/* Header with UI mode controls */}
+        <header className="home-header">
+          <div className="home-header__inner">
+            <h1 className="home-header__title">site(.)moss</h1>
+            <div className="home-header__controls">
+              <div className="home-header__mode-switch" role="group" aria-label="Site interface mode">
+                <span className={`home-header__mode-label ${uiMode === 'apple' ? 'is-active' : ''}`}>Web Traditional</span>
+                <button
+                  type="button"
+                  className={`home-header__switch ${uiMode === 'legacy' ? 'is-windows' : ''}`}
+                  role="switch"
+                  aria-checked={uiMode === 'legacy'}
+                  aria-label="Toggle between Web Traditional and Windows interface"
+                  onClick={() => applyUiMode(uiMode === 'apple' ? 'legacy' : 'apple')}
+                >
+                  <span className="home-header__switch-thumb" />
+                </button>
+                <span className={`home-header__mode-label ${uiMode === 'legacy' ? 'is-active' : ''}`}>Windows</span>
+              </div>
+              <button
+                type="button"
+                className="home-header__btn"
+                onClick={() => setIsSettingsOpen(true)}
+              >
+                Settings
+              </button>
+            </div>
           </div>
-        </div>
+        </header>
+
+        {/* Apple Mode Panel */}
+        {uiMode === 'apple' && (
+          <main className="home-content">
+            <section className="home-apple-panel">
+              <div className="home-apple-panel__overlay" />
+              <div className="home-apple-panel__card">
+                <div className="home-apple-panel__header">
+                  <h2>Recommended Menu</h2>
+                  <p>Shortcuts to the parts you open the most</p>
+                </div>
+                <nav className="home-apple-panel__nav">
+                  <a href="/blog" className="home-apple-panel__nav-item">
+                    <div className="home-apple-panel__nav-icon">
+                      <Newspaper size={20} strokeWidth={1.5} />
+                    </div>
+                    <div className="home-apple-panel__nav-content">
+                      <h3>Blog</h3>
+                      <p>Stories, updates, and behind-the-scenes notes</p>
+                    </div>
+                    <ArrowRight size={16} className="home-apple-panel__nav-arrow" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => applyUiMode('legacy')}
+                    className="home-apple-panel__nav-item"
+                  >
+                    <div className="home-apple-panel__nav-icon">
+                      <LayoutGrid size={20} strokeWidth={1.5} />
+                    </div>
+                    <div className="home-apple-panel__nav-content">
+                      <h3>Windows Dashboard</h3>
+                      <p>Switch to tile view for a balanced at-a-glance layout</p>
+                    </div>
+                    <ArrowRight size={16} className="home-apple-panel__nav-arrow" />
+                  </button>
+                  <a href="/admin" className="home-apple-panel__nav-item">
+                    <div className="home-apple-panel__nav-icon">
+                      <Shield size={20} strokeWidth={1.5} />
+                    </div>
+                    <div className="home-apple-panel__nav-content">
+                      <h3>Admin</h3>
+                      <p>Manage posts and moderation tools</p>
+                    </div>
+                    <ArrowRight size={16} className="home-apple-panel__nav-arrow" />
+                  </a>
+                  <a href="#" onClick={(e) => { e.preventDefault(); setIsSettingsOpen(true); }} className="home-apple-panel__nav-item">
+                    <div className="home-apple-panel__nav-icon">
+                      <Settings size={20} strokeWidth={1.5} />
+                    </div>
+                    <div className="home-apple-panel__nav-content">
+                      <h3>Settings</h3>
+                      <p>Appearance, theme, accessibility, and canvas controls</p>
+                    </div>
+                    <ArrowRight size={16} className="home-apple-panel__nav-arrow" />
+                  </a>
+                </nav>
+              </div>
+            </section>
+          </main>
+        )}
+
+        {/* Classic Mode Panel */}
+        {uiMode === 'legacy' && (
+          <main className="home-content">
+            <section className="home-classic-panel">
+              <ProfileButton />
+              <div className="home-shell__veil" />
+              <div className="home-shell__content">
+                <div className="home-shell__inner">
+                  <motion.header
+                    className="dashboard-header"
+                    initial={{ y: -20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
+                  >
+                    <h1>Dashboard</h1>
+                    <p>Windows mode with an aligned tile matrix</p>
+                  </motion.header>
+
+                  <main className="dashboard-main w-fit max-w-full gap-x-8 gap-y-10 no-scrollbar pb-8">
+                    {dashboardConfig.map((group) => (
+                      <div key={group.title} className="dashboard-group">
+                        <h2 className="text-[10px] font-bold uppercase tracking-widest opacity-60 ml-1 text-foreground">
+                          {group.title}
+                        </h2>
+                        <div className="dashboard-grid">
+                          {group.tiles.map((tile) => {
+                            if (tile.component) {
+                              const Component = tile.component;
+                              return <Component key={tile.id} {...tile.props} />;
+                            }
+
+                            if (tile.id === 'quote') {
+                              return (
+                                <Tile key={tile.id} size={tile.size} bgImage={randomQuote.image} bgClass="bg-black/40 border-white/20" className="text-white">
+                                  <div className="flex flex-col items-center justify-center w-full h-full px-6 text-center">
+                                    <p className="text-xs italic font-medium leading-tight mb-2">&quot;{randomQuote.text}&quot;</p>
+                                    <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">- {randomQuote.author}</p>
+                                  </div>
+                                </Tile>
+                              );
+                            }
+
+                            const extraProps = tile.id === 'settings' ? { onClick: () => setIsSettingsOpen(true) } : {};
+
+                            return (
+                              <Tile
+                                key={tile.id}
+                                size={tile.size}
+                                label={tile.label}
+                                icon={tile.icon}
+                                accentType={tile.accent}
+                                opacity={tile.opacity}
+                                {...extraProps}
+                              >
+                                {tile.id === 'project' && (
+                                  <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center">
+                                    <div className="w-10 h-10 rounded-full border-2 border-tile-text/30 flex items-center justify-center mb-1">
+                                      <span className="text-xs font-bold text-tile-text">75%</span>
+                                    </div>
+                                    <p className="text-[8px] font-bold uppercase tracking-tighter text-tile-text">In Progress</p>
+                                  </div>
+                                )}
+                              </Tile>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </main>
+                </div>
+              </div>
+            </section>
+          </main>
+        )}
+        
         <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       </div>
     </ThemeProvider>
