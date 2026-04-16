@@ -67,12 +67,17 @@ const HomePage = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [uiMode, setUiMode] = useState<UiMode>('apple');
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const [activeTilePreviewId, setActiveTilePreviewId] = useState<string | null>(null);
-  const [tilePreviewMode, setTilePreviewMode] = useState<'fullscreen' | 'modal' | null>(null);
+  const [fullscreenTilePreviewId, setFullscreenTilePreviewId] = useState<string | null>(null);
+  const [windowsTilePreviewIds, setWindowsTilePreviewIds] = useState<string[]>([]);
+  const [pendingReplaceTileId, setPendingReplaceTileId] = useState<string | null>(null);
+  const [splitRatio, setSplitRatio] = useState(0.5);
   const [randomQuote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
 
   const applyUiMode = (mode: UiMode) => {
     setUiMode(mode);
+    setFullscreenTilePreviewId(null);
+    setWindowsTilePreviewIds([]);
+    setPendingReplaceTileId(null);
     localStorage.setItem(SITE_UI_MODE_KEY, mode);
     document.documentElement.setAttribute('data-ui-mode', mode);
     window.dispatchEvent(new CustomEvent(SITE_UI_MODE_EVENT, { detail: { mode } }));
@@ -160,27 +165,87 @@ const HomePage = () => {
   }, []);
 
   const getTileLabel = (tile: DashboardTile) => tile.label || TILE_NAME_FALLBACK[tile.id] || tile.id;
+  const getTileLabelById = (tileId: string) => {
+    const tile = allTiles.find((item) => item.id === tileId);
+    if (tile) return getTileLabel(tile);
+    return TILE_NAME_FALLBACK[tileId] || tileId;
+  };
 
   const allTiles = useMemo(() => dashboardConfig.flatMap((group) => group.tiles), [dashboardConfig]);
-  const activeTilePreview = useMemo(
-    () => allTiles.find((tile) => tile.id === activeTilePreviewId) || null,
-    [allTiles, activeTilePreviewId]
+  const fullscreenTilePreview = useMemo(
+    () => allTiles.find((tile) => tile.id === fullscreenTilePreviewId) || null,
+    [allTiles, fullscreenTilePreviewId]
+  );
+  const windowsTilePreviews = useMemo(
+    () => windowsTilePreviewIds.map((id) => allTiles.find((tile) => tile.id === id)).filter(Boolean) as DashboardTile[],
+    [allTiles, windowsTilePreviewIds]
   );
 
-  const closeTilePreview = () => {
-    setActiveTilePreviewId(null);
-    setTilePreviewMode(null);
+  const closeFullscreenPreview = () => {
+    setFullscreenTilePreviewId(null);
+  };
+
+  const closeWindowsPreview = (tileId?: string) => {
+    if (!tileId) {
+      setWindowsTilePreviewIds([]);
+      setPendingReplaceTileId(null);
+      return;
+    }
+    setWindowsTilePreviewIds((prev) => {
+      const next = prev.filter((id) => id !== tileId);
+      if (next.length < 2) {
+        setPendingReplaceTileId(null);
+      }
+      return next;
+    });
+  };
+
+  const replaceWindowsPane = (side: 'left' | 'right') => {
+    if (!pendingReplaceTileId) return;
+    setWindowsTilePreviewIds((prev) => {
+      if (prev.length < 2) return prev;
+      if (side === 'left') return [pendingReplaceTileId, prev[1]];
+      return [prev[0], pendingReplaceTileId];
+    });
+    setPendingReplaceTileId(null);
+  };
+
+  const handleSplitDragStart = (event: React.PointerEvent<HTMLButtonElement>) => {
+    const container = event.currentTarget.parentElement;
+    if (!container) return;
+
+    const rect = container.getBoundingClientRect();
+    const startX = event.clientX;
+    const startRatio = splitRatio;
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const deltaPx = moveEvent.clientX - startX;
+      const deltaRatio = deltaPx / rect.width;
+      const nextRatio = Math.min(0.65, Math.max(0.35, startRatio + deltaRatio));
+      setSplitRatio(nextRatio);
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
   };
 
   useEffect(() => {
-    if (!activeTilePreviewId) return;
+    if (!fullscreenTilePreviewId && windowsTilePreviewIds.length === 0) return;
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeTilePreview();
+      if (event.key === 'Escape') {
+        closeFullscreenPreview();
+        closeWindowsPreview();
+      }
     };
 
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [activeTilePreviewId]);
+  }, [fullscreenTilePreviewId, windowsTilePreviewIds]);
 
   const renderTileContent = (tile: DashboardTile) => {
     if (tile.component) {
@@ -235,8 +300,18 @@ const HomePage = () => {
       return;
     }
 
-    setActiveTilePreviewId(tileId);
-    setTilePreviewMode(uiMode === 'apple' ? 'fullscreen' : 'modal');
+    if (uiMode === 'apple') {
+      setFullscreenTilePreviewId(tileId);
+      return;
+    }
+
+    setPendingReplaceTileId(null);
+    setWindowsTilePreviewIds((prev) => {
+      if (prev.includes(tileId)) return prev;
+      if (prev.length < 2) return [...prev, tileId];
+      setPendingReplaceTileId(tileId);
+      return prev;
+    });
   };
 
   if (!mounted) return (
@@ -407,51 +482,119 @@ const HomePage = () => {
           </main>
         )}
 
-        {activeTilePreview && tilePreviewMode === 'fullscreen' && (
+        {fullscreenTilePreview && (
           <div className="home-menu-viewer home-menu-viewer--fullscreen" role="dialog" aria-modal="true">
             <button
               type="button"
               className="home-menu-viewer__backdrop"
-              onClick={closeTilePreview}
+              onClick={closeFullscreenPreview}
               aria-label="Close fullscreen menu"
             />
             <section className="home-menu-viewer__panel">
               <header className="home-menu-viewer__header">
                 <div>
                   <p className="home-menu-viewer__kicker">Web Traditional</p>
-                  <h3>{getTileLabel(activeTilePreview)}</h3>
+                  <h3>{getTileLabel(fullscreenTilePreview)}</h3>
                 </div>
-                <button type="button" className="home-menu-viewer__close" onClick={closeTilePreview} aria-label="Close viewer">
+                <button type="button" className="home-menu-viewer__close" onClick={closeFullscreenPreview} aria-label="Close viewer">
                   <X size={16} />
                 </button>
               </header>
               <div className="home-menu-viewer__body">
-                {renderTileContent(activeTilePreview)}
+                {renderTileContent(fullscreenTilePreview)}
               </div>
             </section>
           </div>
         )}
 
-        {activeTilePreview && tilePreviewMode === 'modal' && (
+        {windowsTilePreviews.length > 0 && (
           <div className="home-menu-viewer home-menu-viewer--modal" role="dialog" aria-modal="true">
             <button
               type="button"
               className="home-menu-viewer__backdrop"
-              onClick={closeTilePreview}
+              onClick={() => closeWindowsPreview()}
               aria-label="Close modal menu"
             />
-            <section className="home-menu-viewer__panel home-menu-viewer__panel--modal">
+            <section className={`home-menu-viewer__panel home-menu-viewer__panel--modal ${windowsTilePreviews.length === 2 ? 'is-split' : ''}`}>
               <header className="home-menu-viewer__header">
                 <div>
                   <p className="home-menu-viewer__kicker">Windows</p>
-                  <h3>{getTileLabel(activeTilePreview)}</h3>
+                  <h3>{windowsTilePreviews.length === 2 ? 'Split View' : getTileLabel(windowsTilePreviews[0])}</h3>
                 </div>
-                <button type="button" className="home-menu-viewer__close" onClick={closeTilePreview} aria-label="Close viewer">
+                <button type="button" className="home-menu-viewer__close" onClick={() => closeWindowsPreview()} aria-label="Close viewer">
                   <X size={16} />
                 </button>
               </header>
-              <div className="home-menu-viewer__body home-menu-viewer__body--modal">
-                {renderTileContent(activeTilePreview)}
+              {pendingReplaceTileId && windowsTilePreviewIds.length === 2 && (
+                <div className="home-menu-viewer__replace-banner" role="status">
+                  <p>
+                    Choose where to open <strong>{getTileLabelById(pendingReplaceTileId)}</strong>
+                  </p>
+                  <div className="home-menu-viewer__replace-actions">
+                    <button type="button" onClick={() => replaceWindowsPane('left')}>Replace Left</button>
+                    <button type="button" onClick={() => replaceWindowsPane('right')}>Replace Right</button>
+                    <button type="button" onClick={() => setPendingReplaceTileId(null)}>Cancel</button>
+                  </div>
+                </div>
+              )}
+              <div
+                className={`home-menu-viewer__body home-menu-viewer__body--modal ${windowsTilePreviews.length === 2 ? 'is-split' : ''}`}
+                style={windowsTilePreviews.length === 2 ? ({ ['--split-left' as string]: `${Math.round(splitRatio * 100)}%` } as React.CSSProperties) : undefined}
+              >
+                {windowsTilePreviews.length === 1 && (
+                  <article key={windowsTilePreviews[0].id} className="home-menu-viewer__pane">
+                    <div className="home-menu-viewer__pane-content">
+                      {renderTileContent(windowsTilePreviews[0])}
+                    </div>
+                  </article>
+                )}
+
+                {windowsTilePreviews.length === 2 && (
+                  <>
+                    <article key={windowsTilePreviews[0].id} className="home-menu-viewer__pane">
+                      <div className="home-menu-viewer__pane-header">
+                        <h4>{getTileLabel(windowsTilePreviews[0])}</h4>
+                        <button
+                          type="button"
+                          className="home-menu-viewer__pane-close"
+                          onClick={() => closeWindowsPreview(windowsTilePreviews[0].id)}
+                          aria-label={`Close ${getTileLabel(windowsTilePreviews[0])} pane`}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <div className="home-menu-viewer__pane-content">
+                        {renderTileContent(windowsTilePreviews[0])}
+                      </div>
+                    </article>
+
+                    <button
+                      type="button"
+                      className="home-menu-viewer__divider"
+                      onPointerDown={handleSplitDragStart}
+                      aria-label="Resize split panes"
+                    >
+                      <span />
+                    </button>
+
+                    <article key={windowsTilePreviews[1].id} className="home-menu-viewer__pane">
+                      <div className="home-menu-viewer__pane-header">
+                        <h4>{getTileLabel(windowsTilePreviews[1])}</h4>
+                        <button
+                          type="button"
+                          className="home-menu-viewer__pane-close"
+                          onClick={() => closeWindowsPreview(windowsTilePreviews[1].id)}
+                          aria-label={`Close ${getTileLabel(windowsTilePreviews[1])} pane`}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <div className="home-menu-viewer__pane-content">
+                        {renderTileContent(windowsTilePreviews[1])}
+                      </div>
+                    </article>
+                  </>
+                )}
               </div>
             </section>
           </div>
