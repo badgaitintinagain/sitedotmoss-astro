@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, memo, useMemo, useEffect } from "react";
-import { motion } from 'framer-motion';
 import { ThemeProvider } from "@/components/ThemeProvider";
 import Background from "@/components/Background";
 import Tile from "@/components/Tile";
@@ -16,7 +15,7 @@ import ResourceTile from "@/components/ResourceTile";
 import PhotosTile from "@/components/PhotosTile";
 import SettingsModal from "@/components/SettingsModal";
 import ProfileButton from "@/components/ProfileButton";
-import { Settings, Users, PenTool, Newspaper, LayoutGrid, ArrowRight, Shield, ChevronDown } from "lucide-react";
+import { Settings, Users, PenTool, Newspaper, LayoutGrid, ArrowRight, Shield, ChevronDown, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface DashboardTile {
@@ -68,6 +67,8 @@ const HomePage = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [uiMode, setUiMode] = useState<UiMode>('apple');
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [activeTilePreviewId, setActiveTilePreviewId] = useState<string | null>(null);
+  const [tilePreviewMode, setTilePreviewMode] = useState<'fullscreen' | 'modal' | null>(null);
   const [randomQuote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
 
   const applyUiMode = (mode: UiMode) => {
@@ -160,9 +161,65 @@ const HomePage = () => {
 
   const getTileLabel = (tile: DashboardTile) => tile.label || TILE_NAME_FALLBACK[tile.id] || tile.id;
 
-  const jumpToTile = (tileId: string) => {
-    const tileElement = document.querySelector(`[data-tile-id="${tileId}"] > *`) as HTMLElement | null;
-    tileElement?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+  const allTiles = useMemo(() => dashboardConfig.flatMap((group) => group.tiles), [dashboardConfig]);
+  const activeTilePreview = useMemo(
+    () => allTiles.find((tile) => tile.id === activeTilePreviewId) || null,
+    [allTiles, activeTilePreviewId]
+  );
+
+  const closeTilePreview = () => {
+    setActiveTilePreviewId(null);
+    setTilePreviewMode(null);
+  };
+
+  useEffect(() => {
+    if (!activeTilePreviewId) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeTilePreview();
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [activeTilePreviewId]);
+
+  const renderTileContent = (tile: DashboardTile) => {
+    if (tile.component) {
+      const Component = tile.component;
+      return <Component {...tile.props} />;
+    }
+
+    if (tile.id === 'quote') {
+      return (
+        <Tile size={tile.size} bgImage={randomQuote.image} bgClass="bg-black/40 border-white/20" className="text-white">
+          <div className="flex flex-col items-center justify-center w-full h-full px-6 text-center">
+            <p className="text-xs italic font-medium leading-tight mb-2">&quot;{randomQuote.text}&quot;</p>
+            <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">- {randomQuote.author}</p>
+          </div>
+        </Tile>
+      );
+    }
+
+    const extraProps = tile.id === 'settings' ? { onClick: () => setIsSettingsOpen(true) } : {};
+
+    return (
+      <Tile
+        size={tile.size}
+        label={tile.label}
+        icon={tile.icon}
+        accentType={tile.accent}
+        opacity={tile.opacity}
+        {...extraProps}
+      >
+        {tile.id === 'project' && (
+          <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center">
+            <div className="w-10 h-10 rounded-full border-2 border-tile-text/30 flex items-center justify-center mb-1">
+              <span className="text-xs font-bold text-tile-text">75%</span>
+            </div>
+            <p className="text-[8px] font-bold uppercase tracking-tighter text-tile-text">In Progress</p>
+          </div>
+        )}
+      </Tile>
+    );
   };
 
   const handleTileShortcut = (tileId: string) => {
@@ -178,13 +235,8 @@ const HomePage = () => {
       return;
     }
 
-    if (uiMode !== 'legacy') {
-      applyUiMode('legacy');
-    }
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => jumpToTile(tileId));
-    });
+    setActiveTilePreviewId(tileId);
+    setTilePreviewMode(uiMode === 'apple' ? 'fullscreen' : 'modal');
   };
 
   if (!mounted) return (
@@ -331,16 +383,6 @@ const HomePage = () => {
               <div className="home-shell__veil" />
               <div className="home-shell__content">
                 <div className="home-shell__inner">
-                  <motion.header
-                    className="dashboard-header"
-                    initial={{ y: -20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 1, ease: 'easeOut' }}
-                  >
-                    <h1>Dashboard</h1>
-                    <p>Windows mode with an aligned tile matrix</p>
-                  </motion.header>
-
                   <main className="dashboard-main max-w-full no-scrollbar pb-8">
                     {dashboardConfig.map((group) => (
                       <div key={group.title} className="dashboard-group">
@@ -349,49 +391,9 @@ const HomePage = () => {
                         </h2>
                         <div className="dashboard-grid">
                           {group.tiles.map((tile) => {
-                            if (tile.component) {
-                              const Component = tile.component;
-                              return (
-                                <div key={tile.id} className="dashboard-tile-anchor" data-tile-id={tile.id}>
-                                  <Component {...tile.props} />
-                                </div>
-                              );
-                            }
-
-                            if (tile.id === 'quote') {
-                              return (
-                                <div key={tile.id} className="dashboard-tile-anchor" data-tile-id={tile.id}>
-                                  <Tile size={tile.size} bgImage={randomQuote.image} bgClass="bg-black/40 border-white/20" className="text-white">
-                                    <div className="flex flex-col items-center justify-center w-full h-full px-6 text-center">
-                                      <p className="text-xs italic font-medium leading-tight mb-2">&quot;{randomQuote.text}&quot;</p>
-                                      <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">- {randomQuote.author}</p>
-                                    </div>
-                                  </Tile>
-                                </div>
-                              );
-                            }
-
-                            const extraProps = tile.id === 'settings' ? { onClick: () => setIsSettingsOpen(true) } : {};
-
                             return (
                               <div key={tile.id} className="dashboard-tile-anchor" data-tile-id={tile.id}>
-                                <Tile
-                                  size={tile.size}
-                                  label={tile.label}
-                                  icon={tile.icon}
-                                  accentType={tile.accent}
-                                  opacity={tile.opacity}
-                                  {...extraProps}
-                                >
-                                  {tile.id === 'project' && (
-                                    <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center">
-                                      <div className="w-10 h-10 rounded-full border-2 border-tile-text/30 flex items-center justify-center mb-1">
-                                        <span className="text-xs font-bold text-tile-text">75%</span>
-                                      </div>
-                                      <p className="text-[8px] font-bold uppercase tracking-tighter text-tile-text">In Progress</p>
-                                    </div>
-                                  )}
-                                </Tile>
+                                {renderTileContent(tile)}
                               </div>
                             );
                           })}
@@ -403,6 +405,56 @@ const HomePage = () => {
               </div>
             </section>
           </main>
+        )}
+
+        {activeTilePreview && tilePreviewMode === 'fullscreen' && (
+          <div className="home-menu-viewer home-menu-viewer--fullscreen" role="dialog" aria-modal="true">
+            <button
+              type="button"
+              className="home-menu-viewer__backdrop"
+              onClick={closeTilePreview}
+              aria-label="Close fullscreen menu"
+            />
+            <section className="home-menu-viewer__panel">
+              <header className="home-menu-viewer__header">
+                <div>
+                  <p className="home-menu-viewer__kicker">Web Traditional</p>
+                  <h3>{getTileLabel(activeTilePreview)}</h3>
+                </div>
+                <button type="button" className="home-menu-viewer__close" onClick={closeTilePreview} aria-label="Close viewer">
+                  <X size={16} />
+                </button>
+              </header>
+              <div className="home-menu-viewer__body">
+                {renderTileContent(activeTilePreview)}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {activeTilePreview && tilePreviewMode === 'modal' && (
+          <div className="home-menu-viewer home-menu-viewer--modal" role="dialog" aria-modal="true">
+            <button
+              type="button"
+              className="home-menu-viewer__backdrop"
+              onClick={closeTilePreview}
+              aria-label="Close modal menu"
+            />
+            <section className="home-menu-viewer__panel home-menu-viewer__panel--modal">
+              <header className="home-menu-viewer__header">
+                <div>
+                  <p className="home-menu-viewer__kicker">Windows</p>
+                  <h3>{getTileLabel(activeTilePreview)}</h3>
+                </div>
+                <button type="button" className="home-menu-viewer__close" onClick={closeTilePreview} aria-label="Close viewer">
+                  <X size={16} />
+                </button>
+              </header>
+              <div className="home-menu-viewer__body home-menu-viewer__body--modal">
+                {renderTileContent(activeTilePreview)}
+              </div>
+            </section>
+          </div>
         )}
         
         <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
