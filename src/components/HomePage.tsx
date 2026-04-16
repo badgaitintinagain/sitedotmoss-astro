@@ -16,7 +16,7 @@ import ResourceTile from "@/components/ResourceTile";
 import PhotosTile from "@/components/PhotosTile";
 import SettingsModal from "@/components/SettingsModal";
 import ProfileButton from "@/components/ProfileButton";
-import { Settings, Users, PenTool, Newspaper, LayoutGrid, ArrowRight, Shield } from "lucide-react";
+import { Settings, Users, PenTool, Newspaper, LayoutGrid, ArrowRight, Shield, ChevronDown } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface DashboardTile {
@@ -45,10 +45,29 @@ type UiMode = 'apple' | 'legacy';
 const SITE_UI_MODE_EVENT = 'site-ui-mode-change';
 const SITE_UI_MODE_KEY = 'site-ui-mode';
 
+const TILE_NAME_FALLBACK: Record<string, string> = {
+  clock: 'Clock',
+  calendar: 'Calendar',
+  settings: 'Settings',
+  quote: 'Quote',
+  ad: 'Ad',
+  weather: 'Weather',
+  blog: 'Blog',
+  tasks: 'Tasks',
+  resources: 'Resources',
+  photos: 'Photos',
+  project: 'Project Alpha',
+  team: 'Team',
+  spotify: 'Spotify Analysis',
+  shoedemo: 'Shoe Demo',
+  nextwbc: 'Next WBC'
+};
+
 const HomePage = () => {
   const [mounted] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [uiMode, setUiMode] = useState<UiMode>('apple');
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [randomQuote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
 
   const applyUiMode = (mode: UiMode) => {
@@ -75,6 +94,12 @@ const HomePage = () => {
     };
     window.addEventListener(SITE_UI_MODE_EVENT, handleModeChange);
     return () => window.removeEventListener(SITE_UI_MODE_EVENT, handleModeChange);
+  }, []);
+
+  useEffect(() => {
+    const onWindowClick = () => setActiveDropdown(null);
+    window.addEventListener('click', onWindowClick);
+    return () => window.removeEventListener('click', onWindowClick);
   }, []);
 
   const dashboardConfig = useMemo<DashboardGroup[]>(() => {
@@ -133,6 +158,35 @@ const HomePage = () => {
     }));
   }, []);
 
+  const getTileLabel = (tile: DashboardTile) => tile.label || TILE_NAME_FALLBACK[tile.id] || tile.id;
+
+  const jumpToTile = (tileId: string) => {
+    const tileElement = document.querySelector(`[data-tile-id="${tileId}"] > *`) as HTMLElement | null;
+    tileElement?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+  };
+
+  const handleTileShortcut = (tileId: string) => {
+    setActiveDropdown(null);
+
+    if (tileId === 'blog') {
+      window.location.href = '/blog';
+      return;
+    }
+
+    if (tileId === 'settings') {
+      setIsSettingsOpen(true);
+      return;
+    }
+
+    if (uiMode !== 'legacy') {
+      applyUiMode('legacy');
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => jumpToTile(tileId));
+    });
+  };
+
   if (!mounted) return (
     <div className="min-h-screen w-full bg-[#F2EBE3] dark:bg-[#1A1410] flex items-center justify-center">
       <div className="text-foreground opacity-20 text-sm tracking-widest uppercase font-bold text-center">
@@ -149,6 +203,39 @@ const HomePage = () => {
         <header className="home-header">
           <div className="home-header__inner">
             <h1 className="home-header__title">site(.)moss</h1>
+            <nav className="home-header__menu" aria-label="Group tile menu">
+              {dashboardConfig.map((group) => {
+                const isOpen = activeDropdown === group.title;
+
+                return (
+                  <div key={group.title} className="home-header__dropdown" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      className={`home-header__dropdown-trigger ${isOpen ? 'is-open' : ''}`}
+                      onClick={() => setActiveDropdown(isOpen ? null : group.title)}
+                      aria-expanded={isOpen}
+                    >
+                      <span>{group.title}</span>
+                      <ChevronDown size={14} />
+                    </button>
+                    {isOpen && (
+                      <div className="home-header__dropdown-menu" role="menu">
+                        {group.tiles.map((tile) => (
+                          <button
+                            key={tile.id}
+                            type="button"
+                            className="home-header__dropdown-item"
+                            onClick={() => handleTileShortcut(tile.id)}
+                          >
+                            {getTileLabel(tile)}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
             <div className="home-header__controls">
               <div className="home-header__mode-switch" role="group" aria-label="Site interface mode">
                 <span className={`home-header__mode-label ${uiMode === 'apple' ? 'is-active' : ''}`}>Web Traditional</span>
@@ -254,7 +341,7 @@ const HomePage = () => {
                     <p>Windows mode with an aligned tile matrix</p>
                   </motion.header>
 
-                  <main className="dashboard-main w-fit max-w-full gap-x-8 gap-y-10 no-scrollbar pb-8">
+                  <main className="dashboard-main max-w-full no-scrollbar pb-8">
                     {dashboardConfig.map((group) => (
                       <div key={group.title} className="dashboard-group">
                         <h2 className="text-[10px] font-bold uppercase tracking-widest opacity-60 ml-1 text-foreground">
@@ -264,41 +351,48 @@ const HomePage = () => {
                           {group.tiles.map((tile) => {
                             if (tile.component) {
                               const Component = tile.component;
-                              return <Component key={tile.id} {...tile.props} />;
+                              return (
+                                <div key={tile.id} className="dashboard-tile-anchor" data-tile-id={tile.id}>
+                                  <Component {...tile.props} />
+                                </div>
+                              );
                             }
 
                             if (tile.id === 'quote') {
                               return (
-                                <Tile key={tile.id} size={tile.size} bgImage={randomQuote.image} bgClass="bg-black/40 border-white/20" className="text-white">
-                                  <div className="flex flex-col items-center justify-center w-full h-full px-6 text-center">
-                                    <p className="text-xs italic font-medium leading-tight mb-2">&quot;{randomQuote.text}&quot;</p>
-                                    <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">- {randomQuote.author}</p>
-                                  </div>
-                                </Tile>
+                                <div key={tile.id} className="dashboard-tile-anchor" data-tile-id={tile.id}>
+                                  <Tile size={tile.size} bgImage={randomQuote.image} bgClass="bg-black/40 border-white/20" className="text-white">
+                                    <div className="flex flex-col items-center justify-center w-full h-full px-6 text-center">
+                                      <p className="text-xs italic font-medium leading-tight mb-2">&quot;{randomQuote.text}&quot;</p>
+                                      <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">- {randomQuote.author}</p>
+                                    </div>
+                                  </Tile>
+                                </div>
                               );
                             }
 
                             const extraProps = tile.id === 'settings' ? { onClick: () => setIsSettingsOpen(true) } : {};
 
                             return (
-                              <Tile
-                                key={tile.id}
-                                size={tile.size}
-                                label={tile.label}
-                                icon={tile.icon}
-                                accentType={tile.accent}
-                                opacity={tile.opacity}
-                                {...extraProps}
-                              >
-                                {tile.id === 'project' && (
-                                  <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center">
-                                    <div className="w-10 h-10 rounded-full border-2 border-tile-text/30 flex items-center justify-center mb-1">
-                                      <span className="text-xs font-bold text-tile-text">75%</span>
+                              <div key={tile.id} className="dashboard-tile-anchor" data-tile-id={tile.id}>
+                                <Tile
+                                  size={tile.size}
+                                  label={tile.label}
+                                  icon={tile.icon}
+                                  accentType={tile.accent}
+                                  opacity={tile.opacity}
+                                  {...extraProps}
+                                >
+                                  {tile.id === 'project' && (
+                                    <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center">
+                                      <div className="w-10 h-10 rounded-full border-2 border-tile-text/30 flex items-center justify-center mb-1">
+                                        <span className="text-xs font-bold text-tile-text">75%</span>
+                                      </div>
+                                      <p className="text-[8px] font-bold uppercase tracking-tighter text-tile-text">In Progress</p>
                                     </div>
-                                    <p className="text-[8px] font-bold uppercase tracking-tighter text-tile-text">In Progress</p>
-                                  </div>
-                                )}
-                              </Tile>
+                                  )}
+                                </Tile>
+                              </div>
                             );
                           })}
                         </div>
