@@ -5,6 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 
 interface TileProps {
   size: '1x1' | '2x1' | '2x2' | '2x3' | '3x2';
+  shape?: 'rect' | 'circle' | 'triangle';
   label?: string;
   className?: string;
   children?: React.ReactNode;
@@ -16,7 +17,7 @@ interface TileProps {
   opacity?: number;
 }
 
-const Tile: React.FC<TileProps> = memo(({ size, label, className = '', children, bgClass = '', bgImage, icon: Icon, onClick, accentType, opacity }) => {
+const Tile: React.FC<TileProps> = memo(({ size, shape = 'rect', label, className = '', children, bgClass = '', bgImage, icon: Icon, onClick, accentType, opacity }) => {
   const tileRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
   const entryDelay = useMemo(() => Math.random() * 0.3, []);
@@ -36,6 +37,10 @@ const Tile: React.FC<TileProps> = memo(({ size, label, className = '', children,
   };
 
   const isSmall = size === '1x1' || size === '2x1';
+  const shapeStyle = {
+    borderRadius: shape === 'circle' ? '999px' : undefined,
+    clipPath: shape === 'triangle' ? 'polygon(50% 0%, 2% 98%, 98% 98%)' : undefined,
+  } as React.CSSProperties;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const tile = tileRef.current;
@@ -53,6 +58,7 @@ const Tile: React.FC<TileProps> = memo(({ size, label, className = '', children,
       onMouseLeave={() => setIsHovered(false)}
       onMouseMove={handleMouseMove}
       className={`tile relative overflow-hidden group ${sizeClasses[size]} flex flex-col ${isSmall ? 'justify-center items-center' : 'justify-end items-start'} p-2 text-left border cursor-pointer ${textClass} ${className}`}
+      style={shapeStyle}
       initial={{ opacity: 0, scale: 0.98, y: 5 }}
       animate={{
         opacity: 1,

@@ -21,6 +21,7 @@ import type { LucideIcon } from "lucide-react";
 interface DashboardTile {
   id: string;
   size: '1x1' | '2x1' | '2x2' | '2x3' | '3x2';
+  shape?: 'rect' | 'circle' | 'triangle';
   label?: string;
   icon?: LucideIcon;
   component?: React.ComponentType<Record<string, unknown>>;
@@ -47,8 +48,6 @@ const SITE_UI_MODE_KEY = 'site-ui-mode';
 const TILE_NAME_FALLBACK: Record<string, string> = {
   clock: 'Clock',
   calendar: 'Calendar',
-  shapeCircle: 'Circle',
-  shapeTriangle: 'Triangle',
   settings: 'Settings',
   quote: 'Quote',
   ad: 'Ad',
@@ -117,9 +116,7 @@ const HomePage = () => {
         tiles: [
           { id: 'clock', size: '2x2', component: ClockTile, label: 'Clock' },
           { id: 'calendar', size: '2x3', component: CalendarTile, label: 'Calendar' },
-          { id: 'shapeCircle', size: '1x1', label: 'Circle', accent: 'primary', opacity: 100 },
-          { id: 'shapeTriangle', size: '1x1', label: 'Triangle', accent: 'primary', opacity: 100 },
-          { id: 'settings', size: '1x1', label: 'Settings', icon: Settings, accent: 'secondary', opacity: 60 },
+          { id: 'settings', size: '1x1', shape: 'circle', label: 'Settings', icon: Settings, accent: 'secondary', opacity: 100 },
           { id: 'quote', size: '3x2', accent: 'primary', opacity: 92 },
           { id: 'ad', size: '3x2', component: AdTile, props: { title: "New Collection 2025", description: "Discover the future of design." } },
           { id: 'weather', size: '2x1', component: WeatherTile, label: 'Weather' }
@@ -130,7 +127,7 @@ const HomePage = () => {
         tiles: [
           { id: 'blog', size: '2x2', component: BlogTile, label: 'Blog' },
           { id: 'tasks', size: '2x2', label: 'Tasks', icon: PenTool, accent: 'secondary', opacity: 40 },
-          { id: 'resources', size: '1x1', component: ResourceTile, accent: 'primary', opacity: 25 },
+          { id: 'resources', size: '1x1', shape: 'triangle', component: ResourceTile, accent: 'primary', opacity: 100 },
           { id: 'photos', size: '2x1', component: PhotosTile, label: 'Photos', accent: 'primary', opacity: 35 },
           { id: 'project', size: '2x3', label: 'Project Alpha', accent: 'secondary', opacity: 50 },
           { id: 'team', size: '2x2', label: 'Team', icon: Users, accent: 'primary', opacity: 35 }
@@ -259,7 +256,7 @@ const HomePage = () => {
 
     if (tile.id === 'quote') {
       return (
-        <Tile size={tile.size} className="text-white">
+        <Tile size={tile.size} shape={tile.shape} className="text-white">
           <div className="flex flex-col items-center justify-center w-full h-full px-6 text-center">
             <p className="text-xs italic font-medium leading-tight mb-2">&quot;{randomQuote.text}&quot;</p>
             <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">- {randomQuote.author}</p>
@@ -273,31 +270,13 @@ const HomePage = () => {
     return (
       <Tile
         size={tile.size}
+        shape={tile.shape}
         label={tile.label}
         icon={tile.icon}
         accentType={tile.accent}
         opacity={tile.opacity}
         {...extraProps}
       >
-        {tile.id === 'shapeCircle' && (
-          <div className="flex h-full w-full items-center justify-center">
-            <span className="h-9 w-9 rounded-full border-2 border-white" />
-          </div>
-        )}
-        {tile.id === 'shapeTriangle' && (
-          <div className="flex h-full w-full items-center justify-center">
-            <span
-              aria-hidden="true"
-              style={{
-                width: 0,
-                height: 0,
-                borderLeft: '16px solid transparent',
-                borderRight: '16px solid transparent',
-                borderBottom: '28px solid #ffffff'
-              }}
-            />
-          </div>
-        )}
         {tile.id === 'project' && (
           <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center">
             <div className="w-10 h-10 rounded-full border-2 border-tile-text/30 flex items-center justify-center mb-1">
