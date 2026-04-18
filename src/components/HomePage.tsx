@@ -255,7 +255,7 @@ const HomePage = () => {
 
     if (tile.id === 'quote') {
       return (
-        <Tile size={tile.size} className="text-tile-text">
+        <Tile size={tile.size} className="text-[#0000ff]">
           <div className="flex flex-col items-center justify-center w-full h-full px-6 text-center">
             <p className="text-xs italic font-medium leading-tight mb-2">&quot;{randomQuote.text}&quot;</p>
             <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">- {randomQuote.author}</p>
@@ -330,40 +330,40 @@ const HomePage = () => {
         <header className="home-header">
           <div className="home-header__inner">
             <h1 className="home-header__title">site(.)moss</h1>
-            <nav className="home-header__menu" aria-label="Group tile menu">
-              {dashboardConfig.map((group) => {
-                const isOpen = activeDropdown === group.title;
-
-                return (
-                  <div key={group.title} className="home-header__dropdown" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      className={`home-header__dropdown-trigger ${isOpen ? 'is-open' : ''}`}
-                      onClick={() => setActiveDropdown(isOpen ? null : group.title)}
-                      aria-expanded={isOpen}
-                    >
-                      <span>{group.title}</span>
-                      <ChevronDown size={14} />
-                    </button>
-                    {isOpen && (
-                      <div className="home-header__dropdown-menu" role="menu">
-                        {group.tiles.map((tile) => (
-                          <button
-                            key={tile.id}
-                            type="button"
-                            className="home-header__dropdown-item"
-                            onClick={() => handleTileShortcut(tile.id)}
-                          >
-                            {getTileLabel(tile)}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </nav>
             <div className="home-header__controls">
+              <nav className="home-header__menu" aria-label="Group tile menu">
+                {dashboardConfig.map((group) => {
+                  const isOpen = activeDropdown === group.title;
+
+                  return (
+                    <div key={group.title} className="home-header__dropdown" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        className={`home-header__dropdown-trigger ${isOpen ? 'is-open' : ''}`}
+                        onClick={() => setActiveDropdown(isOpen ? null : group.title)}
+                        aria-expanded={isOpen}
+                      >
+                        <span>{group.title}</span>
+                        <ChevronDown size={14} />
+                      </button>
+                      {isOpen && (
+                        <div className="home-header__dropdown-menu" role="menu">
+                          {group.tiles.map((tile) => (
+                            <button
+                              key={tile.id}
+                              type="button"
+                              className="home-header__dropdown-item"
+                              onClick={() => handleTileShortcut(tile.id)}
+                            >
+                              {getTileLabel(tile)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </nav>
               <div className="home-header__mode-switch" role="group" aria-label="Site interface mode">
                 <span className={`home-header__mode-label ${uiMode === 'apple' ? 'is-active' : ''}`}>Web Traditional</span>
                 <button

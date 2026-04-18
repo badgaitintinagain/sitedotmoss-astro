@@ -57,7 +57,7 @@ const Tile: React.FC<TileProps> = memo(({ size, shape = 'rect', label, className
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onMouseMove={handleMouseMove}
-      className={`tile relative overflow-hidden group ${sizeClasses[size]} flex flex-col ${isSmall ? 'justify-center items-center' : 'justify-end items-start'} p-2 text-left border cursor-pointer ${textClass} ${className}`}
+      className={`tile relative overflow-hidden group ${bgImage ? 'tile--image' : ''} ${sizeClasses[size]} flex flex-col ${isSmall ? 'justify-center items-center' : 'justify-end items-start'} p-2 text-left border cursor-pointer ${textClass} ${className}`}
       style={shapeStyle}
       initial={{ opacity: 0, scale: 0.98, y: 5 }}
       animate={{
