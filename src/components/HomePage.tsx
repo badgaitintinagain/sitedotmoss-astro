@@ -47,6 +47,8 @@ const SITE_UI_MODE_KEY = 'site-ui-mode';
 const TILE_NAME_FALLBACK: Record<string, string> = {
   clock: 'Clock',
   calendar: 'Calendar',
+  shapeCircle: 'Circle',
+  shapeTriangle: 'Triangle',
   settings: 'Settings',
   quote: 'Quote',
   ad: 'Ad',
@@ -115,6 +117,8 @@ const HomePage = () => {
         tiles: [
           { id: 'clock', size: '2x2', component: ClockTile, label: 'Clock' },
           { id: 'calendar', size: '2x3', component: CalendarTile, label: 'Calendar' },
+          { id: 'shapeCircle', size: '1x1', label: 'Circle', accent: 'primary', opacity: 100 },
+          { id: 'shapeTriangle', size: '1x1', label: 'Triangle', accent: 'primary', opacity: 100 },
           { id: 'settings', size: '1x1', label: 'Settings', icon: Settings, accent: 'secondary', opacity: 60 },
           { id: 'quote', size: '3x2', accent: 'primary', opacity: 92 },
           { id: 'ad', size: '3x2', component: AdTile, props: { title: "New Collection 2025", description: "Discover the future of design." } },
@@ -275,6 +279,25 @@ const HomePage = () => {
         opacity={tile.opacity}
         {...extraProps}
       >
+        {tile.id === 'shapeCircle' && (
+          <div className="flex h-full w-full items-center justify-center">
+            <span className="h-9 w-9 rounded-full border-2 border-white" />
+          </div>
+        )}
+        {tile.id === 'shapeTriangle' && (
+          <div className="flex h-full w-full items-center justify-center">
+            <span
+              aria-hidden="true"
+              style={{
+                width: 0,
+                height: 0,
+                borderLeft: '16px solid transparent',
+                borderRight: '16px solid transparent',
+                borderBottom: '28px solid #ffffff'
+              }}
+            />
+          </div>
+        )}
         {tile.id === 'project' && (
           <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center">
             <div className="w-10 h-10 rounded-full border-2 border-tile-text/30 flex items-center justify-center mb-1">
@@ -315,7 +338,7 @@ const HomePage = () => {
   };
 
   if (!mounted) return (
-    <div className="min-h-screen w-full bg-[#F2EBE3] dark:bg-[#1A1410] flex items-center justify-center">
+    <div className="min-h-screen w-full bg-white flex items-center justify-center">
       <div className="text-foreground opacity-20 text-sm tracking-widest uppercase font-bold text-center">
         Loading...
       </div>
@@ -454,12 +477,6 @@ const HomePage = () => {
         {uiMode === 'legacy' && (
           <main className="home-content">
             <section className="home-classic-panel">
-              <div className="windows-shape-field" aria-hidden="true">
-                <span className="windows-shape windows-shape--circle windows-shape--circle-lg" />
-                <span className="windows-shape windows-shape--circle windows-shape--circle-sm" />
-                <span className="windows-shape windows-shape--triangle windows-shape--triangle-top" />
-                <span className="windows-shape windows-shape--triangle windows-shape--triangle-bottom" />
-              </div>
               <ProfileButton />
               <div className="home-shell__veil" />
               <div className="home-shell__content">
