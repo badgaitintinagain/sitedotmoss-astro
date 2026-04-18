@@ -332,22 +332,21 @@ const HomePage = () => {
             <h1 className="home-header__title">site(.)moss</h1>
             <div className="home-header__controls">
               <nav className="home-header__menu" aria-label="Group tile menu">
-                {dashboardConfig.map((group) => {
-                  const isOpen = activeDropdown === group.title;
-
-                  return (
-                    <div key={group.title} className="home-header__dropdown" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        type="button"
-                        className={`home-header__dropdown-trigger ${isOpen ? 'is-open' : ''}`}
-                        onClick={() => setActiveDropdown(isOpen ? null : group.title)}
-                        aria-expanded={isOpen}
-                      >
-                        <span>{group.title}</span>
-                        <ChevronDown size={14} />
-                      </button>
-                      {isOpen && (
-                        <div className="home-header__dropdown-menu" role="menu">
+                <div className="home-header__dropdown" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className={`home-header__dropdown-trigger ${activeDropdown === 'menu' ? 'is-open' : ''}`}
+                    onClick={() => setActiveDropdown(activeDropdown === 'menu' ? null : 'menu')}
+                    aria-expanded={activeDropdown === 'menu'}
+                  >
+                    <span>Menu</span>
+                    <ChevronDown size={14} />
+                  </button>
+                  {activeDropdown === 'menu' && (
+                    <div className="home-header__dropdown-menu" role="menu">
+                      {dashboardConfig.map((group) => (
+                        <div key={group.title} className="home-header__dropdown-group">
+                          <p className="home-header__dropdown-group-label">{group.title}</p>
                           {group.tiles.map((tile) => (
                             <button
                               key={tile.id}
@@ -359,10 +358,10 @@ const HomePage = () => {
                             </button>
                           ))}
                         </div>
-                      )}
+                      ))}
                     </div>
-                  );
-                })}
+                  )}
+                </div>
               </nav>
               <div className="home-header__mode-switch" role="group" aria-label="Site interface mode">
                 <span className={`home-header__mode-label ${uiMode === 'apple' ? 'is-active' : ''}`}>Web Traditional</span>
@@ -378,13 +377,6 @@ const HomePage = () => {
                 </button>
                 <span className={`home-header__mode-label ${uiMode === 'legacy' ? 'is-active' : ''}`}>Windows</span>
               </div>
-              <button
-                type="button"
-                className="home-header__btn"
-                onClick={() => setIsSettingsOpen(true)}
-              >
-                Settings
-              </button>
               <ProfileButton inNavbar />
             </div>
           </div>
