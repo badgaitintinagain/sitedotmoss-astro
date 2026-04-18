@@ -59,8 +59,8 @@ const Tile: React.FC<TileProps> = memo(({ size, label, className = '', children,
         scale: 1,
         y: isHovered ? -4 : 0,
         filter: isHovered ? 'brightness(1.1)' : 'brightness(1)',
-        borderColor: isHovered ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.25)',
-        boxShadow: isHovered ? '0 20px 40px rgba(0,0,0,0.15)' : '0 4px 12px rgba(0,0,0,0.05)'
+        borderColor: isHovered ? 'rgba(0,0,255,0.72)' : 'rgba(0,0,255,0.36)',
+        boxShadow: isHovered ? '0 20px 40px rgba(0,0,255,0.22)' : '0 4px 12px rgba(0,0,255,0.1)'
       }}
       transition={{ duration: 0.3, ease: 'easeOut', opacity: { duration: 0.8, delay: entryDelay } }}
     >
@@ -86,13 +86,13 @@ const Tile: React.FC<TileProps> = memo(({ size, label, className = '', children,
         />
       )}
       {/* Dark Overlay for Image */}
-      {bgImage && <div className="absolute inset-0 z-0 bg-black/40 group-hover:bg-black/25 transition-colors duration-500" />}
+      {bgImage && <div className="absolute inset-0 z-0 transition-colors duration-500" style={{ backgroundColor: isHovered ? 'rgba(0,0,255,0.28)' : 'rgba(0,0,255,0.45)' }} />}
 
       {/* Gradient Blur Overlay */}
       <motion.div
         className="pointer-events-none absolute inset-0 opacity-0 z-0"
         style={{
-          background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.4) 0%, transparent 60%)',
+          background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0,0,255,0.35) 0%, transparent 60%)',
           filter: 'blur(20px)',
         }}
         animate={{ opacity: isHovered ? 1 : 0 }}

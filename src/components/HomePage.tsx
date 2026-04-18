@@ -35,9 +35,9 @@ interface DashboardGroup {
 }
 
 const QUOTES = [
-  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs", image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=320&q=55" },
-  { text: "Stay hungry, stay foolish.", author: "Steve Jobs", image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=320&q=55" },
-  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt", image: "https://images.unsplash.com/photo-1485872232694-217b2ad2303e?auto=format&fit=crop&w=320&q=55" }
+  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { text: "Stay hungry, stay foolish.", author: "Steve Jobs" },
+  { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" }
 ];
 
 type UiMode = 'apple' | 'legacy';
@@ -116,7 +116,7 @@ const HomePage = () => {
           { id: 'clock', size: '2x2', component: ClockTile, label: 'Clock' },
           { id: 'calendar', size: '2x3', component: CalendarTile, label: 'Calendar' },
           { id: 'settings', size: '1x1', label: 'Settings', icon: Settings, accent: 'secondary', opacity: 60 },
-          { id: 'quote', size: '3x2', accent: 'primary' },
+          { id: 'quote', size: '3x2', accent: 'primary', opacity: 92 },
           { id: 'ad', size: '3x2', component: AdTile, props: { title: "New Collection 2025", description: "Discover the future of design." } },
           { id: 'weather', size: '2x1', component: WeatherTile, label: 'Weather' }
         ]
@@ -255,7 +255,7 @@ const HomePage = () => {
 
     if (tile.id === 'quote') {
       return (
-        <Tile size={tile.size} bgImage={randomQuote.image} bgClass="bg-black/40 border-white/20" className="text-white">
+        <Tile size={tile.size} className="text-white">
           <div className="flex flex-col items-center justify-center w-full h-full px-6 text-center">
             <p className="text-xs italic font-medium leading-tight mb-2">&quot;{randomQuote.text}&quot;</p>
             <p className="text-[9px] font-bold uppercase tracking-widest opacity-80">- {randomQuote.author}</p>
@@ -454,6 +454,12 @@ const HomePage = () => {
         {uiMode === 'legacy' && (
           <main className="home-content">
             <section className="home-classic-panel">
+              <div className="windows-shape-field" aria-hidden="true">
+                <span className="windows-shape windows-shape--circle windows-shape--circle-lg" />
+                <span className="windows-shape windows-shape--circle windows-shape--circle-sm" />
+                <span className="windows-shape windows-shape--triangle windows-shape--triangle-top" />
+                <span className="windows-shape windows-shape--triangle windows-shape--triangle-bottom" />
+              </div>
               <ProfileButton />
               <div className="home-shell__veil" />
               <div className="home-shell__content">
