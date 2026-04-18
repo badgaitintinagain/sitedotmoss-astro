@@ -13,7 +13,11 @@ interface AuthUser {
   avatar?: string;
 }
 
-const ProfileButton: React.FC = () => {
+interface ProfileButtonProps {
+  inNavbar?: boolean;
+}
+
+const ProfileButton: React.FC<ProfileButtonProps> = ({ inNavbar = false }) => {
   const { theme, toggleTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -91,11 +95,14 @@ const ProfileButton: React.FC = () => {
 
   return (
     <>
-      <div className="fixed top-6 md:top-8 right-6 z-50" ref={dropdownRef}>
+      <div className={inNavbar ? "relative z-[80]" : "fixed top-6 md:top-8 right-6 z-50"} ref={dropdownRef}>
         {/* Profile Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-1.5 p-1.5 rounded-[4px] bg-foreground/5 hover:bg-foreground/10 border border-foreground/15 transition-all duration-200 group backdrop-blur-xl shadow-lg hover:shadow-xl"
+          className={inNavbar
+            ? "flex items-center gap-1.5 p-1.5 rounded-[4px] bg-[#0000ff]/6 hover:bg-[#0000ff]/12 border border-[#0000ff]/30 transition-all duration-200 group"
+            : "flex items-center gap-1.5 p-1.5 rounded-[4px] bg-foreground/5 hover:bg-foreground/10 border border-foreground/15 transition-all duration-200 group backdrop-blur-xl shadow-lg hover:shadow-xl"
+          }
           aria-label="Open profile menu"
         >
           <div className="w-7 h-7 rounded-[3px] bg-accent-primary/20 border border-accent-primary/35 flex items-center justify-center overflow-hidden group-hover:border-accent-primary/50 transition-all">
@@ -111,7 +118,10 @@ const ProfileButton: React.FC = () => {
           {/* Dropdown Menu */}
           {isOpen && (
             <motion.div
-              className="absolute right-0 mt-2 w-56 bg-background/85 border border-foreground/15 rounded-[6px] shadow-2xl overflow-hidden backdrop-blur-xl z-[60]"
+              className={inNavbar
+                ? "absolute right-0 mt-2 w-56 bg-white border border-[#0000ff]/25 rounded-[6px] shadow-2xl overflow-hidden z-[100]"
+                : "absolute right-0 mt-2 w-56 bg-background/85 border border-foreground/15 rounded-[6px] shadow-2xl overflow-hidden backdrop-blur-xl z-[60]"
+              }
               initial={{ opacity: 0, y: -10, scaleX: 0.92, scaleY: 0.75, borderRadius: '10px', filter: 'blur(4px)' }}
               animate={{ opacity: 1, y: 0, scaleX: 1, scaleY: 1, borderRadius: '6px', filter: 'blur(0px)' }}
               exit={{ opacity: 0, y: -6, scaleX: 0.96, scaleY: 0.9, filter: 'blur(2px)' }}

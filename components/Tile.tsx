@@ -76,7 +76,7 @@ const Tile: React.FC<TileProps> = memo(({ size, shape = 'rect', label, className
           className="absolute inset-0 z-0 transition-colors duration-500"
           style={{ 
             backgroundColor: `var(--accent-${accentType})`,
-            opacity: bgImage ? 0.35 : effectiveOpacity 
+            opacity: bgImage ? 0 : Math.min(effectiveOpacity, 0.12)
           }}
         />
       )}
@@ -91,14 +91,11 @@ const Tile: React.FC<TileProps> = memo(({ size, shape = 'rect', label, className
           style={{ backgroundImage: `url(${bgImage})` }}
         />
       )}
-      {/* Dark Overlay for Image */}
-      {bgImage && <div className="absolute inset-0 z-0 transition-colors duration-500" style={{ backgroundColor: isHovered ? 'rgba(0,0,255,0.28)' : 'rgba(0,0,255,0.45)' }} />}
-
       {/* Gradient Blur Overlay */}
       <motion.div
         className="pointer-events-none absolute inset-0 opacity-0 z-0"
         style={{
-          background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0,0,255,0.35) 0%, transparent 60%)',
+          background: 'radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0,0,255,0.2) 0%, transparent 60%)',
           filter: 'blur(20px)',
         }}
         animate={{ opacity: isHovered ? 1 : 0 }}
